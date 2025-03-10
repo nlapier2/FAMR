@@ -1,4 +1,5 @@
-# Provides various utility functions used by multiple scripts
+# Provides various utility functions used by multiple scripts, or intended to
+#    be called internally only.
 
 # helper function to subset summary statistics based on provided indices
 subset_sumstats = function(ss, idx) {
@@ -178,3 +179,93 @@ impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
   R[lower.tri(R)] = t(R)[lower.tri(R)]
   return(R)
 }
+
+
+# simple wrapper function to write results (for use with simulation script only)
+write_famr_res = function(out, famr_res, K, fa_method, for_sim=F) {
+  # construct method_name which identifies the FA method used
+  method_name = ifelse(toupper(fa_method) != 'NONE' && !is.na(fa_method),
+                       paste0('famr_', fa_method), 'famr')
+  
+  # save full results in RDS file
+  saveRDS(famr_res, paste0(out, method_name, '.rds'))
+  
+  # write simpler results text file for evaluating simulations, if requested
+  if(for_sim) {
+    expo_pips = t(famr_res$pips$exposures[1:K])  # exclude factor pips
+    expo_post_means = t(famr_res$posterior_mean$exposures[1:K])
+    expo_post_stderr = t(sqrt(famr_res$posterior_var$exposures[1:K]))
+    res_vars = c(expo_post_means, expo_post_stderr, expo_pips)
+    write.table(t(res_vars), paste0(out, method_name, '.txt'),
+                row.names = FALSE, col.names = FALSE, append = TRUE)
+  }
+}
+
+
+# helper function for LD pruning SNPs
+ld_prune_famr = function(sumstats, ld, prune_thresh) {
+  if(length(ld) == 1)  return(c(1))  # if only one SNP, no pruning
+  # Sort betas in descending order, reshuffle LD matrix
+  max_abs_betas <- apply(abs(sumstats$betas), 1, max)
+  sorted_ss <- data.frame(max_abs_betas = max_abs_betas, ord = 1:nrow(sumstats$betas))
+  sorted_ss <- sorted_ss[order(-sorted_ss$max_abs_betas), ]
+  ld <- abs(ld[sorted_ss$ord, sorted_ss$ord])
+  
+  # Prune SNPs based on LD threshold in the upper triangle of sorted LD matrix
+  to_prune <- rep(FALSE, ncol(ld))
+  for (idx in 2:ncol(ld)) {
+    if (to_prune[idx]) next  # Skip already pruned SNPs
+    vals <- ld[1:(idx-1), idx]  # upper triangle
+    if (any(vals[!to_prune[1:(idx-1)]] > prune_thresh)) {
+      to_prune[idx] <- TRUE
+    }
+  }
+  keep_idx <- sorted_ss$ord[!to_prune]  # original order
+  return(sort(keep_idx))
+}
+
+
+# wrapper function to LD prune and merge summary statistics
+prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh, 
+                           f_idx, oracle_mode) {
+  if(!oracle_mode) {  # don't prune in oracle mode since all SNPs are truly causal
+    idx = ld_prune_famr(sumstats, ld, prune_thresh)
+    sumstats = subset_sumstats(sumstats, idx)
+    ld = ld[idx, idx, drop=F]
+    if(fa_prune_thresh < prune_thresh) {
+      # if applicable, keep a more restricted set of SNPs for FA methods to use
+      fa_idx = ld_prune_famr(sumstats, ld, fa_prune_thresh)
+      ss_for_fa = subset_sumstats(sumstats, fa_idx)
+    } else {
+      ss_for_fa = sumstats
+    }
+  }
+  # keep these indices and merge locus sumstats into overall sumstats
+  sumstats$locus_idx = rep(f_idx, nrow(sumstats$betas))
+  ss_for_fa$locus_idx = rep(f_idx, nrow(ss_for_fa$betas))
+  dat = merge_sumstats(dat, sumstats)
+  dat$ss_for_fa = merge_sumstats(dat$ss_for_fa, ss_for_fa)
+  dat$ld[[f_idx]] = ld
+  return(dat)
+}
+
+
+# merge outcome (y) summary statistics into sumstats object,
+#   keeping only the snps available for both exposures and outcome
+merge_outcome = function(sumstats, ld, y_gwas) {
+  if(is.null(nrow(sumstats$pos))) {  # if pos is only a vector of IDs
+    y_gwas = y_gwas[names_y %in% sumstats$pos, ]
+    idx = which(sumstats$pos %in% y_gwas$names_y)
+  } else {  # if pos is a list/df with an ID row
+    y_gwas = y_gwas[names_y %in% sumstats$pos$ID, ]
+    idx = which(sumstats$pos$ID %in% y_gwas$names_y)
+  }
+  if(length(idx) == 0)  return(list('sumstats' = c(), 'ld' = c()))
+  sumstats = subset_sumstats(sumstats, idx)
+  sumstats$zscores_y = y_gwas$zscores_y
+  sumstats$betas_y = y_gwas$betas_y
+  sumstats$stderrs_y = y_gwas$stderrs_y
+  ld = ld[idx, idx, drop=F]
+  return(list('sumstats' = sumstats, 'ld' = ld))
+}
+
