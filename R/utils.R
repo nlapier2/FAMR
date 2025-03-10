@@ -64,6 +64,30 @@ merge_sumstats = function(all_sumstats, locus_sumstats, by_row=T) {
 }
 
 
+# merge LD for a locus onto overall LD matrix
+merge_ld = function(all_ld, locus_ld) {
+  if(length(all_ld) == 0) {
+    return(locus_ld)
+  }
+  if(length(all_ld) == 1) {
+    alen = 1
+  } else {
+    alen = dim(all_ld)[1]
+  }
+  if(length(locus_ld) == 1) {
+    llen = 1
+  } else {
+    llen = dim(locus_ld)[1]
+  }
+  newdim = alen + llen
+  all_ld = rbind(all_ld, matrix(0, llen, alen))
+  all_ld = cbind(all_ld, matrix(0, newdim, llen))
+  start = newdim - llen + 1
+  all_ld[start:newdim, start:newdim] = locus_ld
+  return(all_ld)
+}
+
+
 # read in VCF file, clean data, and preprocess for use in real data analysis
 read_vcf = function(fname) {
   # read gwas file, filter for NA, MAF, multi-character allele, duplicates, etc
@@ -119,8 +143,38 @@ run_gfa_full = function(x_betas, x_stderrs, N) {
     gfares = gfa_fit(B_hat = x_betas, S = x_stderrs)
     return(gfa_factor_prune_full(x_betas, gfares))
   }, error = function(e) {
-    print(paste0('Error in GFA (may simply be no factors identified): ', e))
+    message('Error in GFA (may simply be no factors identified): ', e)
     return(c())
   })
   return(gfa_factors)
+}
+
+# impute correlations of exposures with SNPs and with each other
+impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
+  # initialize bottom corner of R as SNP ld matrix
+  weights = as.matrix(weights)
+  M = sum(dim(weights))  # total number of variables
+  M_expo = M - dim(ld)[1]  # number of exposures
+  if(typeof(ld) == "S4") {  # sparse matrix
+    R = Matrix(0, M, M)
+  } else {
+    R = matrix(0, M, M)
+  }
+  R[(M_expo+1):M, (M_expo+1):M] = ld
+  
+  # compute exposure-exposure correlations according to cTWAS formula
+  if(length(wRw) == 0)  wRw = weights %*% ld %*% t(weights)
+  invwts = diag(wRw)
+  Rij = wRw / sqrt(invwts %*% t(invwts))
+  R[1:M_expo, 1:M_expo] = Rij
+  
+  # compute exposure-SNP correlations according to cTWAS formula
+  if(length(Rgx) == 0)  Rgx = t(ld %*% t(weights))
+  Rgx = apply(Rgx, 2, function(x) x / sqrt(invwts))
+  R[1:M_expo, (M_expo+1):M] = Rgx
+  
+  # make symmetric and unit diagonal
+  diag(R) = 1
+  R[lower.tri(R)] = t(R)[lower.tri(R)]
+  return(R)
 }

@@ -1,58 +1,45 @@
 # Main user-facing FAMR script
 
-### COMMAND LINE OPTION PARSING
-
-if (sys.nframe() == 0) {
-  option_list = list(
-    make_option(c("-i", "--in_dir"), type="character", default='./',
-                help="Directory of summary statistics files to use", metavar="character"),
-    make_option(c("--ld_dir"), type="character", default='./',
-                help="Directory of LD matrices for loci", metavar="character"),
-    make_option(c("--precomp_dat"), type="character", default='NONE', metavar="character",
-                help="Pass in a precomputed dataframe with sumstats, ld, factors"),
-    make_option(c("--y_gwas_file"), type="character", default='NONE',
-                help="File with GWAS results for outcome phenotype.", metavar="character"),
-    make_option(c("--fa_method"), type="character", default='gfa',
-                help="Factor analysis method to use", metavar="character"),
-    make_option(c("-N", "--num_samples"), type="numeric", default=10000,
-                help="Sample size of exposure data.", metavar="numeric"),
-    make_option(c("--susieL"), type="numeric", default=30,
-                help="SuSiE 'L' setting (max number of effect variables)", metavar="numeric"),
-    make_option(c("--n_iter"), type="numeric", default=30,
-                help="Number of iterations to run FAMR EM loop", metavar="numeric"),
-    make_option(c("--idcol"), type="numeric", default=1,
-                help="Column number with SNP IDs in y_gwas_file.", metavar="numeric"),
-    make_option(c("--betacol"), type="numeric", default=2,
-                help="Column number with SNP betas in y_gwas_file.", metavar="numeric"),
-    make_option(c("--secol"), type="numeric", default=3,
-                help="Column number with SNP std errors in y_gwas_file.", metavar="numeric"),
-    make_option(c("--no_header"), type="logical", action="store_true", default=FALSE,
-                help="Use if sumstat file has no header.", metavar="logical"),
-    make_option(c("--out"), type="character", default='res_',
-                help="Prefix of output and temporary files", metavar="character"),
-    make_option(c("--prune_thresh"), type="numeric", default=0.5, metavar="numeric",
-                help="Threshold for LD pruning (default = 0.5)"),
-    make_option(c("--fa_prune_thresh"), type="numeric", default=0.1, metavar="numeric",
-                help="Threshold for LD pruning for factor analysis (default = 0.1)"),
-    make_option(c("--final_prune_thresh"), type="numeric", default=0.1, metavar="numeric",
-                help="Threshold for LD pruning for final regressions (default = 0.1)"),
-    make_option(c("--nome"), type="logical", action="store_true", default=FALSE,
-                help="Assume no measurement error in SNP effect estimates"),
-    make_option(c("--annihilate_factors"), type="logical", action="store_true", default=FALSE,
-                help="Project factors out of X & Y instead of including as covariates"),
-    make_option(c("--given_factors"), type="character", default='NONE',
-                help="Optional file with prespecified factors", metavar="character")
-  );
-
-  opt_parser = OptionParser(option_list=option_list)
-  opt = parse_args(opt_parser)
-  out = opt$out
+# main function for users to run.
+# a wrapper function that runs all parts of the FAMR-Susie method.
+run_famr_susie = function(in_dir, ld_dir, y_gwas_file, 
+                          fa_method='gfa', num_samples=10000, n_iter=30, 
+                          susieL=30, prune_thresh=0.5, fa_prune_thresh=0.1, 
+                          final_prune_thresh=0.1, annihilate=FALSE,
+                          idcol=1, betacol=2, secol=3, header=TRUE, 
+                          nome=FALSE, given_factors='NONE') {
+  
+  # read outcome gwas, if appropriate
+  y_gwas = read_y_gwas(y_gwas_file, idcol, betacol, secol, header)
+  
+  # read data from input files, add sumstats for outcome
+  sumstats = gather_sumstats(in_dir, ld_dir, prune_thresh=prune_thresh,
+                             fa_prune_thresh=fa_prune_thresh, y_gwas=y_gwas)
+  
+  # generate factors
+  factor_ss = generate_factors(fa_method, sumstats$ss_for_fa, num_samples,
+                               given_factors, full_ss=sumstats)
+  
+  # project out factors from exposures and outcome if requested by user
+  if(annihilate) {
+    sumstats = annihilate_factors(sumstats, factor_ss)
+  }
+  
+  # precompute Z-scores and LD between phenotypes required for susie_rss
+  dat = learn_wts_precomp_merge(sumstats, factor_ss, N=num_samples, 
+                                nome=nome, prune_thresh=final_prune_thresh)
+  
+  # run ctwas-style framework and return
+  n_expo = ncol(dat$sumstats$betas) - factor_ss$n_factors
+  famr_res = run_modified_ctwas(dat, susieL, n_iter, n_expo, 
+                                num_samples, annih=annihilate)
+  return(famr_res)
 }
 
 
 # read outcome gwas sumstats if provided
 read_y_gwas = function(y_gwas_file, idcol, betacol, secol, header=T) {
-  print('Reading outcome GWAS...')
+  message('Reading outcome GWAS...')
   if(y_gwas_file == 'NONE')  return(c())
   if(endsWith(y_gwas_file, '.vcf.gz') || endsWith(y_gwas_file, '.vcf')) {
     gwas = read_vcf(y_gwas_file)
@@ -288,7 +275,7 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 # can merge in gwas for the outcome (y) if provided separately (in y_gwas)
 gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F, 
                            prune_thresh=1.0, fa_prune_thresh=1.0) {
-  print('Gathering summary statistics data...')
+  message('Gathering summary statistics data...')
   fa_prune_thresh = min(fa_prune_thresh, prune_thresh)
   dat = list('lambda' = c(), 'sumstats' = list(), 'ss_for_fa' = list(), 'ld' = list())
   ss_fnames = list.files(path = in_dir, pattern = '*.rds', full.names = T)
@@ -297,7 +284,7 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
   # loop through loci, LD pruning SNPs, possibly intersecting with y_gwas, and
   #   appending the SNPs that pass to the overall summary statistics
   for(f_idx in 1:length(ss_fnames)) {
-    print(paste0('Gathering from locus ', f_idx))
+    message('Gathering from locus ', f_idx)
     sumstats = readRDS(ss_fnames[f_idx])
     if(!is.null(nrow(sumstats$pos)))  sumstats$pos = sumstats$pos$ID
     ld = Matrix(as.matrix(readRDS(ld_fnames[f_idx])))
@@ -334,14 +321,14 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #   reading it in from files
 gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F, 
                                     prune_thresh=1.0, fa_prune_thresh=1.0) {
-  print('Gathering summary statistics data...')
+  message('Gathering summary statistics data...')
   fa_prune_thresh = min(fa_prune_thresh, prune_thresh)
   dat = list('lambda' = c(), 'sumstats' = list(), 'ss_for_fa' = list(), 'ld' = list())
   
   # loop through loci, LD pruning SNPs, possibly intersecting with y_gwas, and
   #   appending the SNPs that pass to the overall summary statistics
   for(f_idx in 1:max(all_ss$locus_idx)) {
-    print(paste0('Gathering from locus ', f_idx))
+    message('Gathering from locus ', f_idx)
     idx = all_ss$locus_idx == f_idx
     sumstats = subset_sumstats(all_ss, idx)
     ld = all_ld[[f_idx]]
@@ -380,7 +367,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
                             full_ss=c()) {
   factor_sumstats = list('n_factors' = 0)
   if(is.na(fa_method) || tolower(fa_method) == 'none')  return(factor_sumstats)
-  print(paste0('Generating factors with: ', fa_method))
+  message('Generating factors with: ', fa_method)
   # generate appropriate factors
   if(given_factors != 'NONE' && file.exists(given_factors)) {  # use pre-specified factors
     # for given factor SNPs set to true value, for others set to 0
@@ -407,7 +394,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
   }
   if(length(factor_wts) == 0 || max(abs(factor_wts)) == 0) {
     # return no factors if method returns empty or all-zero factors
-    print('Number of factors detected: 0')
+    message('Number of factors detected: 0')
     return(list('n_factors' = 0))
   } else if(is.null(ncol(factor_wts))) {  # convert vector to matrix
     factor_wts = as.matrix(factor_wts)
@@ -427,7 +414,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
     factor_sumstats$corrs = cor(factor_sumstats$betas, sumstats$betas)
   }
   factor_sumstats$n_factors = max(0, ncol(factor_sumstats$betas))
-  print(paste0('Number of factors detected: ', factor_sumstats$n_factors))
+  message('Number of factors detected: ', factor_sumstats$n_factors)
   return(factor_sumstats)
 }
 
@@ -435,7 +422,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 # impute Z and R values needed for FAMR, including for factors
 learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000, 
                                    nome=F, prune_thresh=1.0) {
-  print('Computing Z-scores and LD for exposures and factors...')
+  message('Computing Z-scores and LD for exposures and factors...')
   res = list('sumstats' = list(), 'ld' = c(),
              'numerator' = 0, 'wRw' = 0, 'Rgx' = c(), 'factor_corrs' = c())
   lam_idx = 0
@@ -463,7 +450,7 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
     # filter SNPs for final regression / variable selection procedure, 
     #   then merge into overall sumstats
     p_idx = ld_prune_famr(sumstats, ld, prune_thresh)
-    print(paste0(length(p_idx), ' SNPs passed filters in this locus.'))
+    message(length(p_idx), ' SNPs passed filters in this locus.')
     if(length(p_idx != 0)) {
       sumstats = subset_sumstats(sumstats, p_idx)
       res$sumstats = merge_sumstats(res$sumstats, sumstats)
@@ -475,14 +462,14 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
   res$wRw[res$wRw == 0] = 1e-10  # prevent errors from dividing by 0 later
   
   if(factor_ss$n_factors > 0)  res$factor_corrs = factor_ss$corrs
-  print(paste0(nrow(res$sumstats$betas), ' total variants passed FAMR filters.'))
+  message(nrow(res$sumstats$betas), ' total variants passed FAMR filters.')
   return(res)
 }
 
 
 # run zscore and ld imputation, EM estimation, and regression on all data
-run_famr_rss_all = function(dat, L, n_iter, n_expo, n_samp, annih) {
-  print('Running FAMR...')
+run_modified_ctwas = function(dat, L, n_iter, n_expo, n_samp, annih) {
+  message('Running FAMR...')
   # impute exposure z-scores on outcome and ld with SNPs using precomputed data
   R = impute_exposure_corrs(dat$ld, t(as.matrix(dat$sumstats$weights)),
                                   wRw = dat$wRw, Rgx = t(dat$Rgx))
@@ -529,33 +516,4 @@ run_famr_rss_all = function(dat, L, n_iter, n_expo, n_samp, annih) {
     famr_res$factor_corrs = dat$factor_corrs
   }
   return(famr_res)
-}
-
-
-if (sys.nframe() == 0) {  # if running from shell or Rscript (not sourcing)
-  # read outcome gwas, if appropriate
-  y_gwas = read_y_gwas(opt$y_gwas_file, opt$idcol, opt$betacol, opt$secol, !opt$no_header)
-
-  # read data from input files, add sumstats for outcome
-  sumstats = gather_sumstats(opt$in_dir, opt$ld_dir, prune_thresh=opt$prune_thresh,
-                             fa_prune_thresh=opt$fa_prune_thresh, y_gwas=y_gwas)
-
-  # generate factors
-  factor_ss = generate_factors(opt$fa_method, sumstats$ss_for_fa, opt$num_samples,
-                               opt$given_factors, full_ss=sumstats)
-
-  # project out factors from exposures and outcome if requested by user
-  if(opt$annihilate_factors) {
-    sumstats = annihilate_factors(sumstats, factor_ss)
-  }
-
-  # precompute Z-scores and LD between phenotypes required for susie_rss
-  dat = learn_wts_precomp_merge(sumstats, factor_ss, N=opt$num_samples, 
-                                nome=opt$nome, prune_thresh=opt$final_prune_thresh)
-
-  # run famr and save results
-  n_expo = ncol(dat$sumstats$betas) - factor_ss$n_factors
-  famr_res = run_famr_rss_all(dat, opt$susieL, opt$n_iter, n_expo, 
-                              opt$num_samples, annih=opt$annihilate_factors)
-  saveRDS(famr_res, opt$out)
 }
