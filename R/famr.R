@@ -6,8 +6,7 @@ run_famr_susie = function(in_dir, ld_dir, y_gwas_file,
                           fa_method='gfa', num_samples=10000, n_iter=30, 
                           susieL=30, prune_thresh=0.5, fa_prune_thresh=0.1, 
                           final_prune_thresh=0.1, annihilate=FALSE,
-                          idcol=1, betacol=2, secol=3, header=TRUE, 
-                          nome=FALSE, given_factors='NONE') {
+                          idcol=1, betacol=2, secol=3, header=TRUE) {
   
   # read outcome gwas, if appropriate
   y_gwas = read_y_gwas(y_gwas_file, idcol, betacol, secol, header)
@@ -18,7 +17,7 @@ run_famr_susie = function(in_dir, ld_dir, y_gwas_file,
   
   # generate factors
   factor_ss = generate_factors(fa_method, sumstats$ss_for_fa, num_samples,
-                               given_factors, full_ss=sumstats)
+                               full_ss=sumstats)
   
   # project out factors from exposures and outcome if requested by user
   if(annihilate) {
@@ -27,7 +26,7 @@ run_famr_susie = function(in_dir, ld_dir, y_gwas_file,
   
   # precompute Z-scores and LD between phenotypes required for susie_rss
   dat = learn_wts_precomp_merge(sumstats, factor_ss, N=num_samples, 
-                                nome=nome, prune_thresh=final_prune_thresh)
+                                prune_thresh=final_prune_thresh)
   
   # run ctwas-style framework and return
   n_expo = ncol(dat$sumstats$betas) - factor_ss$n_factors

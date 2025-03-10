@@ -5,16 +5,12 @@
 
 # given susie results, update PIP (alpha) and
 #   posterior mean (post_mu) and variance (tau2) of each variable
-update_alpha_tau2 = function(res, n_vars, use_vb=F) {
+update_alpha_tau2 = function(res, n_vars) {
   alpha = list()
   tau2 = list()
   post_mu = list()
   pips = as.numeric(res$pip)
-  if(use_vb) {
-    mu2 = as.numeric(colSums(t(res$s)))
-  } else {
-    mu2 = as.numeric(colSums(res$mu2))
-  }
+  mu2 = as.numeric(colSums(res$mu2))
   post_means = as.numeric(colSums(res$alpha * res$mu))
   pips = sapply(pips, function(x) max(x, 1e-10))  # prevent underflow issues
   mu2 = sapply(mu2, function(x) max(x, 1e-10))
@@ -46,8 +42,8 @@ update_pi_sigma2 = function(alpha, tau2) {
 
 
 # run susie given prior parameters and return results
-run_susie_with_priors = function(pred_vars=c(), y=c(), zscores=c(), R=c(),
-                                 prior_pi=c(), prior_sigma2=c(), L=10, use_vb=F) {
+run_susie_with_priors = function(zscores, R, prior_pi=c(), prior_sigma2=c(), 
+                                 L=10) {
   prior_pi_plain = as.numeric(unlist(prior_pi))
   prior_sigma2_plain = as.numeric(unlist(prior_sigma2))
   # prevent underflow issues
@@ -69,30 +65,28 @@ run_susie_with_priors = function(pred_vars=c(), y=c(), zscores=c(), R=c(),
 
 
 # run E-M algorithm to learn per-variable and group priors
-estimate_priors_EM = function(pred_vars=c(), y=c(), zscores=c(), R=c(),
-                              L=1, n_iter=30, use_vb=F) {
+estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
   # initialize priors
   prior_pi = list()
   prior_sigma2 = list()
   n_vars = list()
-  if(length(zscores) > 0) {  # sumstats mode
-    M = dim(R)[1]  # total number of vars
-    for(k in names(zscores)) {
-      m_k = length(zscores[[k]])
-      prior_pi[[k]] = rep(1 / M, m_k)
-      prior_sigma2[[k]] = rep(50, m_k)
-      n_vars[[k]] = m_k
-    }
-  } 
+  
+  # initialize priors
+  M = dim(R)[1]  # total number of vars
+  for(k in names(zscores)) {
+    m_k = length(zscores[[k]])
+    prior_pi[[k]] = rep(1 / M, m_k)  # uniform prior over the category
+    prior_sigma2[[k]] = rep(50, m_k)  # reasonable starting value
+    n_vars[[k]] = m_k
+  }
 
   for(iter in 1:n_iter) {
     # iteratively run susie with current priors, update per-variable params
     #   (alpha and tau2), and update group priors (pi and sigma2)
     message('Running prior estimation iteration ', iter)
-    res = run_susie_with_priors(pred_vars=pred_vars, y=y, zscores=zscores, R=R,
-                                     prior_pi=prior_pi, prior_sigma2=prior_sigma2,
-                                     L=L, use_vb=use_vb)
-    new_params = update_alpha_tau2(res, n_vars, use_vb=use_vb)
+    res = run_susie_with_priors(zscores, R, prior_pi=prior_pi, 
+                                prior_sigma2=prior_sigma2, L=L)
+    new_params = update_alpha_tau2(res, n_vars)
     new_group_priors = update_pi_sigma2(new_params$alpha, new_params$tau2)
     for(k in names(new_group_priors$pi)) {
       prior_pi[[k]] = rep(new_group_priors$pi[[k]], n_vars[[k]])
@@ -118,24 +112,21 @@ estimate_priors_EM = function(pred_vars=c(), y=c(), zscores=c(), R=c(),
 
 
 # run final susie(-rss) regression to determine PIPs for each variable
-get_results = function(pred_vars=c(), y=c(), zscores=c(), R=c(), priors=c(), L=10, use_vb=F) {
-  susieres = run_susie_with_priors(pred_vars=pred_vars, y=y, zscores=zscores, R=R,
-                                   prior_pi=priors$pi, prior_sigma2=priors$sigma2,
-                                   L=L, use_vb=use_vb)
-  res_df = list('pips' = list(), 'posterior_var' = list(), 'posterior_mean' = list())
-  res_df$susieres = susieres
-  res_df$zscores = zscores
-  res_df$R = R
-  res_df$x_pred = if(length(R) == 0) pred_vars$exposures else c()
-  res_df$priors = priors
-  res_df$L = L
-  final_params  = update_alpha_tau2(susieres, priors$n_vars, use_vb=use_vb)
+get_results = function(zscores, R, priors=c(), L=10) {
+  susieres = run_susie_with_priors(zscores, R, prior_pi=priors$pi, 
+                                   prior_sigma2=priors$sigma2, L=L)
+  res_df = list('pips' = list(), 'posterior_var' = list(), 
+                'posterior_mean' = list(), susieres=susieres, zscores=zscores,
+                R=R, priors=priors, L=L)
+  
+  # update and store final learned parameters
+  final_params  = update_alpha_tau2(susieres, priors$n_vars)
   for(k in names(final_params$alpha)) {
     res_df$pips[[k]] = final_params$alpha[[k]]
     res_df$posterior_var[[k]] = final_params$tau2[[k]]
     res_df$posterior_mean[[k]] = final_params$post_mu[[k]]
     # retain variable names
-    varnames = if(length(R) > 0) names(zscores[[k]]) else colnames(pred_vars[[k]])
+    varnames = names(zscores[[k]])
     names(res_df$pips[[k]]) = varnames
     names(res_df$posterior_var[[k]]) = varnames
     names(res_df$posterior_mean[[k]]) = varnames
