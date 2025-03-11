@@ -10,6 +10,7 @@
 #' @param ss A summary statistics list object, containing some or all of the
 #' following fields (only betas, stderrs, weights, Z required):
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -38,6 +39,7 @@
 #' for more details}
 #' 
 #' \item{orig_zscores_y}{Similar to orig_betas_y but for zscores_y}
+#' }
 #' 
 #' @param idx A vector of SNP indices to retain from ss
 #' 
@@ -82,6 +84,7 @@ subset_sumstats = function(ss, idx) {
 #' @param all_sumstats A summary statistics list object, containing some or all 
 #' of the following fields (only betas, stderrs, weights, Z required):
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -105,6 +108,7 @@ subset_sumstats = function(ss, idx) {
 #' \item{lambda}{A matrix of lambda values learned by learn_lambda in famr.R for 
 #' each exposure in each locus, where each row of the matrix corresponds to a 
 #' locus and the columns are the exposures.}
+#' }
 #' 
 #' @param locus_sumstats Like all_sumstats, but for the current locus only.
 #' 
@@ -204,6 +208,7 @@ merge_ld = function(all_ld, locus_ld) {
 #' @returns A data.frame object with one row per SNP and the following column
 #' fields (omitting those not used by other methods):
 #' 
+#' \describe{
 #' \item{CHR}{Chromosome the SNP is in.}
 #' 
 #' \item{ID}{ID (name) of the SNP.}
@@ -215,6 +220,12 @@ merge_ld = function(all_ld, locus_ld) {
 #' \item{Z}{Z-scores for the SNPs on the trait.}
 #' 
 #' \item{logp}{Log p-values for the association between the SNP and trait.}
+#' }
+#' 
+#' @importFrom data.table fread setnames
+#' @importFrom dplyr %>% filter
+#' @importFrom stats na.omit
+#' @importFrom rlang .data
 #' 
 read_vcf = function(fname) {
   # read gwas file, filter for NA, MAF, multi-character allele, duplicates, etc
@@ -223,10 +234,10 @@ read_vcf = function(fname) {
 
   # Filter NAs, non-passing QC SNPs, reverse-complements, MHC region, and multi-allelic SNPs
   gwas = gwas %>% na.omit() %>%
-    filter(FILTER == 'PASS',
-           nchar(REF) == 1, nchar(ALT) == 1,
-           !(INFO == "ReverseComplementedAlleles"),
-           !(CHR == 6 & POS>=25000000 & POS<=36000000))
+    filter(.data$FILTER == 'PASS',
+           nchar(.data$REF) == 1, nchar(.data$ALT) == 1,
+           !(.data$INFO == "ReverseComplementedAlleles"),
+           !(.data$CHR == 6 & .data$POS>=25000000 & .data$POS<=36000000))
 
 
   # extract allele frequency (AF) from INFO field, filter at MAF < 0.01
@@ -274,7 +285,7 @@ read_vcf = function(fname) {
 #' 
 run_gfa_full = function(x_betas, x_stderrs, N) {
   gfa_factors = tryCatch({
-    gfares = gfa_fit(B_hat = x_betas, S = x_stderrs)
+    gfares = GFA::gfa_fit(B_hat = x_betas, S = x_stderrs)
     return(gfa_factor_prune_full(x_betas, gfares))
   }, error = function(e) {
     message('Error in GFA (may simply be no factors identified): ', e)
@@ -344,6 +355,8 @@ gfa_factor_prune_full = function(x_betas, gfares, thresh = 0.1, min_count = 2) {
 #' @returns A numeric matrix or sparse Matrix object containing the inferred 
 #' correlations between all SNPs, exposures, and factors.
 #' 
+#' @importFrom Matrix Matrix
+#' 
 impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
   # initialize bottom corner of R as SNP ld matrix
   weights = as.matrix(weights)
@@ -396,6 +409,8 @@ impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
 #' 
 #' @returns nothing
 #' 
+#' @importFrom utils write.table
+#' 
 write_famr_res = function(out, famr_res, K, fa_method, for_sim=F) {
   # construct method_name which identifies the FA method used
   method_name = ifelse(toupper(fa_method) != 'NONE' && !is.na(fa_method),
@@ -430,6 +445,7 @@ write_famr_res = function(out, famr_res, K, fa_method, for_sim=F) {
 #' @param sumstats A summary statistics list object, containing the
 #' following fields (and possibly others):
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -437,6 +453,7 @@ write_famr_res = function(out, famr_res, K, fa_method, for_sim=F) {
 #' 
 #' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
 #' stderrs.}
+#' }
 #' 
 #' @param ld A numeric matrix of LD values between SNPs in sumstats
 #' 
@@ -478,6 +495,7 @@ ld_prune_famr = function(sumstats, ld, prune_thresh) {
 #' @param dat A list object formed from merging all previous loci, 
 #' with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -504,6 +522,7 @@ ld_prune_famr = function(sumstats, ld, prune_thresh) {
 #' 
 #' \item{ss_for_fa}{A list object with the "betas", "stderrs", "Z", "weights", 
 #' and "pos" fields, but only for the SNPs to be input to factor analysis.}
+#' }
 #' 
 #' @param sumstats A list object in the same format as dat, but corresponding
 #' to the current locus
@@ -560,6 +579,7 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 #' @param sumstats A list object with the following elements, i.e. summary
 #' statistics for exposures:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -572,12 +592,14 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 #' stderrs.}
 #' 
 #' \item{pos}{A vector of SNP names.}
+#' }
 #' 
 #' @param ld A numeric LD matrix between the SNPs in sumstats.
 #' 
 #' @param y_gwas A list object with the following elements, i.e. summary
 #' statistics for the outcome:
 #' 
+#' \describe{
 #' \item{names_y}{A vector of SNP IDs (names)}
 #' 
 #' \item{betas_y}{A vector of estimated effect sizes of SNPs on the outcome.}
@@ -586,22 +608,25 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 #' 
 #' \item{zscores_y}{A vector of z-scores of SNPs on the outcome, equal to
 #' betas_y divided by stderrs_y.}
+#' }
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{sumstats}{A list with the fields of both sumstats and y_gwas (except
 #' names_y, which is merged into pos), containing the merged summary statistics}
 #' 
 #' \item{ld}{A numeric LD matrix for the SNPs in the new sumstats object; 
 #' the same as the input LD matrix except without the SNPs that are unmeasured
 #' in y_gwas.}
+#' }
 #' 
 merge_outcome = function(sumstats, ld, y_gwas) {
   if(is.null(nrow(sumstats$pos))) {  # if pos is only a vector of IDs
-    y_gwas = y_gwas[names_y %in% sumstats$pos, ]
+    y_gwas = y_gwas[y_gwas$names_y %in% sumstats$pos, ]
     idx = which(sumstats$pos %in% y_gwas$names_y)
   } else {  # if pos is a list/df with an ID row
-    y_gwas = y_gwas[names_y %in% sumstats$pos$ID, ]
+    y_gwas = y_gwas[y_gwas$names_y %in% sumstats$pos$ID, ]
     idx = which(sumstats$pos$ID %in% y_gwas$names_y)
   }
   if(length(idx) == 0)  return(list('sumstats' = c(), 'ld' = c()))

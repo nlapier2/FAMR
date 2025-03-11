@@ -10,10 +10,6 @@
 #' @return A list of sufficient statistics.
 #' 
 #' @importFrom methods as
-#'
-#' @examples
-#' data(N2finemapping)
-#' ss = compute_ss(N2finemapping$X, N2finemapping$Y[,1])
 #' 
 compute_ss = function(X, y, standardize = TRUE) {
   y = y - mean(y)
@@ -181,19 +177,6 @@ estimate_residual_variance_ss = function (XtX, Xty, s, yty, n)
 #' @return A list with elements \code{alpha}, \code{mu} and \code{mu2}
 #'   to be used by \code{susie}.
 #'
-#' @examples
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[sample(1:1000,4)] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#'
-#' # Initialize susie to ground-truth coefficients.
-#' s = susie_init_coef(which(beta != 0),beta[beta != 0],length(beta))
-#' res = susie(X,y,L = 10,s_init=s)
 #'
 susie_init_coef = function (coef_index, coef_value, p) {
   L = length(coef_index)
@@ -480,10 +463,10 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
     n = ncol(X)
     
     # Set three attributes for X.
-    attr(X,"scaled:center") = compute_tf_cm(order,n)
-    attr(X,"scaled:scale") = compute_tf_csd(order,n)
-    attr(X,"d") = compute_tf_d(order,n,attr(X,"scaled:center"),
-                               attr(X,"scaled:scale"),scale,center)
+    attr(X,"scaled:center") = rep(0, n) #susieR::compute_tf_cm(order,n)
+    attr(X,"scaled:scale") = rep(1, n) #susieR::compute_tf_csd(order,n)
+    attr(X,"d") = rep(0, n) #susieR::compute_tf_d(order,n,attr(X,"scaled:center"),
+                               #attr(X,"scaled:scale"),scale,center)
     if (!center)
       attr(X,"scaled:center") = rep(0,n)
     if (!scale)
@@ -951,7 +934,7 @@ compute_Xb = function (X, b) {
   if (!is.null(attr(X,"matrix.type")))
 
     # When X is a trend filtering matrix.
-    scaled.Xb = compute_tf_Xb(attr(X,"order"),b/csd)
+    scaled.Xb = 1 #susieR::compute_tf_Xb(attr(X,"order"),b/csd)
   else
       
     # When X is an ordinary sparse/dense matrix.
@@ -979,7 +962,7 @@ compute_Xty = function (X, y) {
   if (!is.null(attr(X,"matrix.type")))
 
     # When X is a trend filtering matrix.
-    scaled.Xty = compute_tf_Xty(attr(X,"order"),y)/csd
+    scaled.Xty = t(ytX/csd) #susieR::compute_tf_Xty(attr(X,"order"),y)/csd
   else
 
     # When X is an ordinary sparse/dense matrix.
@@ -1227,29 +1210,6 @@ compute_MXt = function (M, X) {
 #'   Society, Series B} \url{https://doi.org/10.1101/501114}.
 #'
 #' @seealso \code{\link{susie_rss}}
-#'
-#' @examples
-#' # susie example.
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[1:4] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' res1 = susie(X,y,L = 10)
-#' plot(beta,coef(res1)[-1])
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#' plot(y,predict(res1))
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
-#'
-#' # susie_suff_stat example.
-#' input_ss = compute_ss(X,y,standardize = TRUE)
-#' res2 = with(input_ss,
-#'             susie_suff_stat(XtX = XtX,Xty = Xty,yty = yty,n = n,L = 10))
-#' plot(coef(res1)[-1],coef(res2)[-1])
-#' abline(a = 0,b = 1,col = "skyblue",lty = "dashed")
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
@@ -1639,21 +1599,6 @@ susie <- function (X,Y,L = min(10,ncol(X)),
 #' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
 #'   \%*\% colSums(alpha*mu)}.}
 #'
-#' @examples
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[1:4] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#'
-#' input_ss <- compute_ss(X,y,standardize = TRUE)
-#' ss   <- univariate_regression(X,y)
-#' R    <- with(input_ss,cov2cor(XtX))
-#' zhat <- with(ss,betahat/sebetahat)
-#' res  <- susie_rss(zhat,R,L = 10)
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
                       L = 10, prior_variance = 50, residual_variance = NULL,
@@ -2441,25 +2386,6 @@ check_projection = function (A, b) {
 #'   (number between 1 and L) of each reported CS in the supplied susie
 #'   fit.}
 #'
-#' @examples
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[1:4] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' s = susie(X,y,L = 10)
-#' susie_get_objective(s)
-#' susie_get_objective(s, last_only=FALSE)
-#' susie_get_residual_variance(s)
-#' susie_get_prior_variance(s)
-#' susie_get_posterior_mean(s)
-#' susie_get_posterior_sd(s)
-#' susie_get_niter(s)
-#' susie_get_pip(s)
-#' susie_get_lfsr(s)
 #'
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
   if (!all(diff(res$elbo) >= (-1*warning_tol)))
@@ -2944,17 +2870,6 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #'   errors (\code{sebetahat}). Optionally, and only when a matrix of
 #'   covariates \code{Z} is provided, a third vector \code{residuals}
 #'   containing the residuals is returned.
-#' @examples
-#' set.seed(1)
-#' n = 1000
-#' p = 1000
-#' beta = rep(0,p)
-#' beta[1:4] = 1
-#' X = matrix(rnorm(n*p),nrow = n,ncol = p)
-#' X = scale(X,center = TRUE,scale = TRUE)
-#' y = drop(X %*% beta + rnorm(n))
-#' res = univariate_regression(X,y)
-#' plot(res$betahat/res$sebetahat)
 #' 
 #' @importFrom stats lm
 #' @importFrom stats .lm.fit

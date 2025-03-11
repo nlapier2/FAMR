@@ -13,6 +13,7 @@
 #' the susieR documentation for more details. Most relevantly for this function,
 #' it contains the following elements:
 #' 
+#' \describe{
 #' \item{pip}{A numeric vector of Posterior Inclusion Probabilities (PIPs) 
 #' for each variable}
 #' 
@@ -23,12 +24,14 @@
 #' 
 #' \item{alpha}{A numeric matrix of PIPs for each credible set, with one row per 
 #' credible set and one column per variable}
+#' }
 #' 
 #' @param n_vars A list object giving the number of variables in each class, 
 #' e.g. ('SNPs' = 10000, 'exposures' = 30)
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{alpha}{A list object with elements for each class of variables,
 #' containing a numeric vector of PIPs for the variables of that class}
 #' 
@@ -39,6 +42,7 @@
 #' \item{post_mu}{A list object with elements for each class of variables,
 #' containing a numeric vector of posterior mean effect size estimates for
 #' the variables of that class}
+#' }
 #' 
 update_alpha_tau2 = function(res, n_vars) {
   alpha = list()
@@ -82,11 +86,13 @@ update_alpha_tau2 = function(res, n_vars) {
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{pi}{A list containing the updated cTWAS prior inclusion probability
 #' (prior probability of effect on the trait) for each class of variables}
 #' 
 #' \item{sigma2}{A list containing the updated cTWAS prior effect variances,
 #' conditioned on the variable having an effect, for each class of variables}
+#' }
 #' 
 update_pi_sigma2 = function(alpha, tau2) {
   new_pi = list()
@@ -171,6 +177,7 @@ run_susie_with_priors = function(zscores, R, prior_pi=c(), prior_sigma2=c(),
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{pi}{A list containing the updated cTWAS prior inclusion probability
 #' (prior probability of effect on the trait) for each class of variables}
 #' 
@@ -179,6 +186,7 @@ run_susie_with_priors = function(zscores, R, prior_pi=c(), prior_sigma2=c(),
 #' 
 #' \item{n_vars}{A list object giving the number of variables in each class, 
 #' e.g. ('SNPs' = 10000, 'exposures' = 30)}
+#' }
 #' 
 estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
   # initialize priors
@@ -241,6 +249,7 @@ estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
 #' 
 #' @param priors A list object with the following elements:
 #' 
+#' \describe{
 #' \item{pi}{A list containing the updated cTWAS prior inclusion probability
 #' (prior probability of effect on the trait) for each class of variables}
 #' 
@@ -249,12 +258,14 @@ estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
 #' 
 #' \item{n_vars}{A list object giving the number of variables in each class, 
 #' e.g. ('SNPs' = 10000, 'exposures' = 30)}
+#' }
 #' 
 #' @param L The maximum number of effects (credible sets) Susie-RSS is allowed
 #' to fit.
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{pips}{A list object with elements for each class of variables,
 #' containing a numeric vector of PIPs for the variables of that class}
 #' 
@@ -277,6 +288,7 @@ estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
 #' 
 #' \item{sorted_pips}{DEPRECATED. The unlisted (vector-format) pips sorted
 #' in decreasing order.}
+#' }
 #' 
 get_results = function(zscores, R, priors=c(), L=10) {
   susieres = run_susie_with_priors(zscores, R, prior_pi=priors$pi, 

@@ -13,3 +13,11 @@ FAMR-Susie uses factor analysis to infer and correct for unobserved
 confounders, and uses sparse polygenic modeling and Bayesian regression to
 alleviate other challenges such as other violations of MR assumptions and 
 sparsity.
+
+
+This repository contains code modified from the susieR and cTWAS packages,
+with permission from the authors.
+
+susieR can be found at https://github.com/stephenslab/susieR
+
+cTWAS can be found at https://github.com/xinhe-lab/ctwas/

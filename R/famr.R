@@ -100,6 +100,7 @@
 #' 
 #' @returns A list with some or all of the following elements:
 #'
+#' \describe{
 #' \item{pips}{A list of the learned PIPs for each exposure, factor, and SNP.}
 #' 
 #' \item{zscores}{A list of the marginal association z-scores learned for each
@@ -124,6 +125,7 @@
 #' \item{factor_corrs}{A matrix of correlations between the learned factor
 #' summary statistics and those of the exposures. Deprecated in favor of the
 #' R matrix.}
+#' }
 #' 
 #' @export
 famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE', fa_method='gfa', 
@@ -190,13 +192,17 @@ famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE', fa_method='gfa',
 #' zscores_y, giving the IDs, estimated effect sizes, standard errors, and 
 #' z-scores of the SNPs on the outcome trait, respectively.
 #' 
+#' @importFrom data.table fread
+#' @importFrom dplyr %>% select
+#' @importFrom rlang .data
+#' 
 #' @export
 read_y_gwas = function(y_gwas_file, idcol, betacol, secol, header=T) {
   message('Reading outcome GWAS...')
   if(y_gwas_file == 'NONE')  return(c())
   if(endsWith(y_gwas_file, '.vcf.gz') || endsWith(y_gwas_file, '.vcf')) {
     gwas = read_vcf(y_gwas_file)
-    gwas = gwas %>% dplyr::select(ID, BETA, SE)  # remove unnecessary fields
+    gwas = gwas %>% dplyr::select(.data$ID, .data$BETA, .data$SE)
   } else {
     gwas = fread(y_gwas_file, sep='\t', header=header,
                  select=c(idcol, betacol, secol))
@@ -493,6 +499,7 @@ precompute_zxy = function(weights, z_gy, ld, orig_z_gy=c(), n_factors=0) {
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -522,6 +529,9 @@ precompute_zxy = function(weights, z_gy, ld, orig_z_gy=c(), n_factors=0) {
 #' 
 #' \item{ss_for_fa}{A list object with the "betas", "stderrs", "Z", "weights", 
 #' and "pos" fields, but only for the SNPs to be input to factor analysis.}
+#' }
+#' 
+#' @importFrom Matrix Matrix
 #' 
 #' @export
 gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F, 
@@ -578,6 +588,7 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #' 
 #' @param all_ss A list object with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -593,6 +604,7 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #' 
 #' \item{locus_idx}{A vector matching SNPs to which locus they come from, 
 #' indexed in the order the loci are read from in_dir.}
+#' }
 #' 
 #' @param all_ld A list mapping locus indices (see above) to the corresponding
 #' LD matrices for that locus. These should be numerical nSNP-by-nSNP matrices.
@@ -613,6 +625,7 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -639,6 +652,9 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #' 
 #' \item{ss_for_fa}{A list object with the "betas", "stderrs", "Z", "weights", 
 #' and "pos" fields, but only for the SNPs to be input to factor analysis.}
+#' }
+#' 
+#' @importFrom Matrix Matrix
 #' 
 #' @export
 gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F, 
@@ -700,6 +716,7 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 #' @param sumstats Input summary statistics to use for factor analysis, usually
 #' from gather_sumstats. A list object with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -709,6 +726,7 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 #' stderrs.}
 #' 
 #' \item{pos}{A vector of SNP names.}
+#' }
 #' 
 #' @param N Sample size of the studies used to generate GWAS summary statistics.
 #' 
@@ -722,6 +740,7 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 #' @returns A list object containing inferred summary statistics for factors,
 #' with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -733,6 +752,7 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 #' \item{pos}{A vector of SNP names.}
 #' 
 #' \item{n_factors}{Number of inferred factors.}
+#' }
 #' 
 #' @export
 generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
@@ -805,6 +825,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' @param all_sumstats A list object, usually generated by gather_sumstats, 
 #' with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -828,10 +849,12 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' \item{lambda}{A matrix of lambda values learned by learn_lambda for each 
 #' exposure in each locus, where each row of the matrix corresponds to a locus
 #' and the columns are the exposures.}
+#' }
 #' 
 #' @param factor_ss A list object containing inferred summary statistics for 
 #' factors, usually from generate_factors, with the following elements:
 #' 
+#' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
@@ -843,6 +866,9 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' \item{pos}{A vector of SNP names.}
 #' 
 #' \item{n_factors}{Number of inferred factors.}
+#' }
+#' 
+#' @param N Number of samples that summary statistics were generated using.
 #' 
 #' @param nome DEPRECATED. Boolean value indicating whether to assume a "no
 #' measurement error" model. Default: FALSE. Used for internal testing purposes.
@@ -854,6 +880,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' 
 #' @returns A list object with the following elements:
 #' 
+#' \describe{
 #' \item{sumstats}{A list object containing summary statistics for all exposures
 #' and factors; see the all_sumstats parameter for format.}
 #' 
@@ -869,6 +896,9 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' \item{Rgx}{A numeric matrix of inferred correlations between SNPs and 
 #' traits (exposures and outcomes), with one row per SNP and one column per 
 #' exposure/factor.}
+#' }
+#' 
+#' @importFrom Matrix Matrix
 #' 
 #' @export
 learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000, 
@@ -930,6 +960,7 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 #' @param dat A list object, usually from learn_wts_precomp_merge, with the
 #' following elements:
 #' 
+#' \describe{
 #' \item{sumstats}{A list object containing summary statistics for all exposures
 #' and factors; see the all_sumstats parameter of learn_wts_precomp_merge 
 #' for the format.}
@@ -946,6 +977,7 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 #' \item{Rgx}{A numeric matrix of inferred correlations between SNPs and 
 #' traits (exposures and outcomes), with one row per SNP and one column per 
 #' exposure/factor.}
+#' }
 #' 
 #' @param L a numeric value representing the maximum number of effects (more
 #' precisely, credible sets) Susie-RSS can model on the outcome
@@ -963,6 +995,7 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 #' 
 #' @returns A list with some or all of the following elements:
 #'
+#' \describe{
 #' \item{pips}{A list of the learned PIPs for each exposure, factor, and SNP.}
 #' 
 #' \item{zscores}{A list of the marginal association z-scores learned for each
@@ -987,6 +1020,9 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 #' \item{factor_corrs}{A matrix of correlations between the learned factor
 #' summary statistics and those of the exposures. Deprecated in favor of the
 #' R matrix.}
+#' }
+#' 
+#' @importFrom Matrix Matrix
 #' 
 #' @export
 run_modified_ctwas = function(dat, L, n_iter, n_expo, n_samp, annih) {
