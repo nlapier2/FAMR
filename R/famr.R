@@ -1,12 +1,136 @@
-# Main user-facing FAMR script
-
-# main function for users to run.
-# a wrapper function that runs all parts of the FAMR-Susie method.
-run_famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE', 
-                          fa_method='gfa', num_samples=10000, n_iter=30, 
-                          susieL=30, prune_thresh=0.5, fa_prune_thresh=0.1, 
-                          final_prune_thresh=0.1, annihilate=FALSE,
-                          idcol=1, betacol=2, secol=3, header=TRUE) {
+#' Factor-Augmented Mendelian Randomization with SuSiE (FAMR-Susie)
+#' 
+#' @description
+#' This is the main user-facing function that runs all parts of the 
+#' FAMR-Susie method, described in the manuscript
+#' "Factor-based methods for robust high-dimensional Mendelian randomization".
+#' FAMR-Susie is intended for use in "high-dimensional" MR, where there are
+#' many genetically-correlated exposures, and simultaneously learns which of 
+#' these exposures have a causal effect on the "outcome" trait.
+#' FAMR-Susie uses factor analysis to infer and correct for unobserved
+#' confounders, and uses sparse polygenic modeling and Bayesian regression to
+#' alleviate other challenges such as other violations of MR assumptions and
+#' sparsity. For more details on the method, please see the manuscript.
+#' 
+#' @details
+#' The famr_susie method expects summary statistics and 
+#' linkage disequilibrium (LD) matrices as input. The user is expected to have
+#' split their data into independent loci before running famr_susie.
+#' Thus famr_susie expects a directory (in_dir) of summary statistics and 
+#' another (ld_dir) for LD matrices, with one file each per locus.
+#' The data for the outcome phenotype may be included in the summary statistics
+#' files or supplied separately via the y_gwas_file argument.
+#' For the formats of these files, see the documentation for gather_sumstats
+#' and read_y_gwas, respectively.
+#' The remaining arguments are explained below.
+#' 
+#' 
+#' @param in_dir A directory with input rds files containing summary statistics
+#' for the exposures, with one file per locus. Each file should be a list object
+#' with three matrices with SNPs as rows and exposure traits as columns. These
+#' are "betas" (effect size estimates of SNPs on exposures), "stderrs" 
+#' (standard errors of the betas), and "Z" (the z-scores, i.e. betas/stderrs).
+#' Optionally can also include corresponding vectors betas_y, stderrs_y, and
+#' zscores_y for the outcome trait ("y"); alternatively, those can be read in
+#' separately via the read_y_gwas function (see below).
+#' Finally, it has a vector 'pos' with the SNP names.
+#' See gather_sumstats for more information.
+#' 
+#' @param ld_dir A directory with input rds files containing LD matrices
+#' corresponding to the SNPs in the summary statistics files, with one file
+#' per locus. These should simply be numerical nSNP-by-nSNP matrices.
+#' 
+#' @param y_gwas_file An optional file path to the file with the outcome
+#' summary statistics. Can either be a TSV file with columns for the SNP name,
+#' effect size estimates, and standard errors (see idcol, betacol, secol),
+#' or a VCF file in the MRC IEU GWAS format, described here:
+#' https://github.com/MRCIEU/gwas-vcf-specification
+#' See also read_vcf in utils.R.
+#' 
+#' @param fa_method The factor analysis (FA) method to be used. This defaults to
+#' 'gfa' and generally should not be changed, as FAMR-Susie currently only
+#' recognizes 'gfa'. If the user wishes to modify the code to allow different FA
+#' methods, they can specify those different methods here. Currently, if the
+#' user puts in something other than 'gfa', no factors are inferred.
+#' This can potentially be useful if the user wants to assess FAMR-Susie both
+#' with and without factors.
+#' 
+#' @param num_samples The number of samples that were used to generate the
+#' exposure summary statistics. If this varies between the exposures, it can be
+#' something like the average -- it does not have to be exact.
+#' 
+#' @param n_iter The number of Expectation Maximization iterations to fit the
+#' cTWAS-style algorithm to learn prior effect probabilities for SNPs and
+#' exposures/factors. Default: 30.
+#' 
+#' @param susieL The maximum number of effects (credible sets) allowed in the
+#' susie_rss runs. Default: 30.
+#' 
+#' @param prune_thresh The absolute value correlation threshold used in the LD
+#' clumping step performed by FAMR-Susie before any further analysis. This is 
+#' done to improve computational speed and stabilize results. We generally
+#' recommend a value between 0.3 and 0.9; the default is 0.5.
+#' 
+#' @param fa_prune_thresh A stricter clumping threshold to generate a set of 
+#' SNPs for input to factor analysis with GFA. Default: 0.1. It is not generally
+#' recommended to change this value much.
+#' 
+#' @param final_prune_thresh A stricted clumping threshold to generate a set of
+#' SNPs to model in the cTWAS-style framework / susie_rss runs. By default it is
+#' 0.1, the same as fa_prune_thresh.
+#' 
+#' @param annihilate Boolean; whether to regress factor summary statistics out
+#' of exposure and outcome summary statistics after the FA stage and before
+#' polygenic modeling and Bayesian regression. Setting this to TRUE will likely
+#' yield a conservative result. Default: FALSE.
+#' 
+#' @param idcol Column of y_gwas_file with the SNP IDs (names). Default is 1,
+#' i.e. the first column. Not used if a VCF is provided.
+#' 
+#' @param betacol Column of y_gwas_file with the SNP effect sizes (betas). 
+#' Default is 2, i.e. the second column. Not used if a VCF is provided.
+#' 
+#' @param secol Column of y_gwas_file with the SNP effect standard errors. 
+#' Default is 3, i.e. the third column. Not used if a VCF is provided.
+#' 
+#' @param header Boolean indicating whether the y_gwas_file has a header line,
+#' e.g. with column names. Default=TRUE. Not used if a VCF is provided.
+#' 
+#' 
+#' 
+#' @returns A list with some or all of the following elements:
+#'
+#' \item{pips}{A list of the learned PIPs for each exposure, factor, and SNP.}
+#' 
+#' \item{zscores}{A list of the marginal association z-scores learned for each
+#' exposure, factor, and SNP with the outcome.}
+#' 
+#' \item{R}{A matrix of the estimated correlations between each pair of 
+#' variables (exposures, factors, and SNPs).}
+#' 
+#' \item{susieres}{The full susie_rss results object. See the susieR 
+#' documentation for more details.}
+#' 
+#' \item{priors}{A list containing the learned prior effect probabilities and
+#' prior effect variances learned for each class of variables (i.e. SNPs and
+#' exposures/factors).}
+#' 
+#' \item{posterior_mean}{A list containing the posterior means learned for 
+#' each variable by susie_rss.}
+#' 
+#' \item{posterior_var}{A list containing the posterior variances learned for 
+#' each variable by susie_rss.}
+#' 
+#' \item{factor_corrs}{A matrix of correlations between the learned factor
+#' summary statistics and those of the exposures. Deprecated in favor of the
+#' R matrix.}
+#' 
+#' @export
+famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE', fa_method='gfa', 
+                      num_samples=10000, n_iter=30, susieL=30, 
+                      prune_thresh=0.5, fa_prune_thresh=0.1, 
+                      final_prune_thresh=0.1, annihilate=FALSE,
+                      idcol=1, betacol=2, secol=3, header=TRUE) {
   
   # read outcome gwas, if appropriate
   y_gwas = read_y_gwas(y_gwas_file, idcol, betacol, secol, header)
@@ -36,7 +160,37 @@ run_famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE',
 }
 
 
-# read outcome gwas sumstats if provided
+#' Read in outcome trait summary statistics
+#' 
+#' @description
+#' Optional helper function to read in summary statistics for the outcome trait,
+#' used if they are not already provided in the summary statistics files read
+#' by in_dir (see famr_susie function documentation).
+#' 
+#' @param y_gwas_file File path to the file with the outcome
+#' summary statistics. Can either be a TSV file with columns for the SNP name,
+#' effect size estimates, and standard errors (see idcol, betacol, secol),
+#' or a VCF file in the MRC IEU GWAS format, described here:
+#' https://github.com/MRCIEU/gwas-vcf-specification
+#' See also read_vcf in utils.R.
+#' 
+#' @param idcol Column of y_gwas_file with the SNP IDs (names). Not used if a 
+#' VCF is provided.
+#' 
+#' @param betacol Column of y_gwas_file with the SNP effect sizes (betas). 
+#' Not used if a VCF is provided.
+#' 
+#' @param secol Column of y_gwas_file with the SNP effect standard errors. 
+#' Not used if a VCF is provided.
+#' 
+#' @param header Boolean indicating whether the y_gwas_file has a header line,
+#' e.g. with column names. Default=TRUE. Not used if a VCF is provided.
+#' 
+#' @returns Returns a list with four items: names_y, betas_y, stderrs_y, and
+#' zscores_y, giving the IDs, estimated effect sizes, standard errors, and 
+#' z-scores of the SNPs on the outcome trait, respectively.
+#' 
+#' @export
 read_y_gwas = function(y_gwas_file, idcol, betacol, secol, header=T) {
   message('Reading outcome GWAS...')
   if(y_gwas_file == 'NONE')  return(c())
@@ -53,7 +207,36 @@ read_y_gwas = function(y_gwas_file, idcol, betacol, secol, header=T) {
 }
 
 
-# project out factors from exposures and outcome if requested by user
+#' Regress factors out of exposures and outcome
+#' 
+#' @description
+#' This is an optional method that regresses factor summary statistics out
+#' of exposure and outcome summary statistics after the factor analysis stage 
+#' and before polygenic modeling and Bayesian regression. 
+#' This will likely yield a conservative result. By default, famr_susie does
+#' not run this. See gather_sumstats for more details.
+#' 
+#' @param sumstats A list object, usually read by gather_sumstats. The list has
+#' three matrices with SNPs as rows and exposure traits as columns. These
+#' are "betas" (effect size estimates of SNPs on exposures), "stderrs" 
+#' (standard errors of the betas), and "Z" (the z-scores, i.e. betas/stderrs).
+#' It also has three corresponding vectors betas_y, stderrs_y, and
+#' zscores_y for the outcome trait ("y"). It also has a vector 'pos' with
+#' the SNP names.
+#' 
+#' @param factor_ss Like sumstats, this is a list object with betas, stderrs, 
+#' and Z matrices, except for the factors instead of the exposures. Usually
+#' generated by generate_factors. It must also have an integer n_factors
+#' giving the number of factors. It must have the same set of SNPs as sumstats.
+#' 
+#' @returns A modified version of the sumstats object. The summary statistics for
+#' the exposures and outcome will have had the factors projected (regressed) out
+#' of them. It adds the fields orig_betas_y and orig_zscores_y, which are the
+#' values those fields had before annihilation, and annih_y, which is the
+#' portion of the outcome that was projected out.
+#' Thus, orig_betas_y = betas_y + annih_y in the returned object.
+#' 
+#' @export
 annihilate_factors = function(sumstats, factor_ss) {
   if(factor_ss$n_factors == 0)  return(sumstats)
   sumstats$orig_betas_y = sumstats$betas_y
@@ -69,7 +252,32 @@ annihilate_factors = function(sumstats, factor_ss) {
 }
 
 
-# learn regularization parameters for susie-rss weight learning
+#' Learn regularization parameters for Susie-RSS weight learning
+#' 
+#' @description
+#' This function learns a "lambda" parameter to regularize the LD matrix of SNPs
+#' in case of a mismatch in populations between an LD reference panel and the
+#' population the summary statistics were gathered in. This improves the 
+#' stability of weights learned by Susie-RSS in learn_weights. The lambdas
+#' will be between 0 and 1 and there is one learned for each trait in each 
+#' independent locus. lambda=0 is no regularization, lambda=1 sets R to the 
+#' identity matrix. 
+#' 
+#' @param sumstats A list object, usually read by gather_sumstats. The list has
+#' three matrices with SNPs as rows and exposure traits as columns. These
+#' are "betas" (effect size estimates of SNPs on exposures), "stderrs" 
+#' (standard errors of the betas), and "Z" (the z-scores, i.e. betas/stderrs).
+#' See gather_sumstats for more details.
+#' 
+#' @param ld numeric LD matrix corresponding to the SNPs in sumstats
+#' 
+#' @param oracle_mode DEPRECATED. used only for internal testing. in this case,
+#' it automatically returns 0 for the lambda parameters, i.e. no regularization.
+#' 
+#' @returns a numerical vector of learned lambda parameters for each trait for 
+#' this locus. each is between 0 and 1.
+#' 
+#' @export
 learn_lambda = function(sumstats, ld, oracle_mode=F) {
   lambda = rep(0, ncol(as.matrix(sumstats$betas)))
   if(oracle_mode)  return(lambda)
@@ -96,7 +304,44 @@ learn_lambda = function(sumstats, ld, oracle_mode=F) {
 }
 
 
-# learn weights of SNP effects on exposures
+#' Learn weights of SNP effects on exposures and factors
+#' 
+#' @description
+#' Learns the "weights" (joint effect sizes) of SNPs on each exposure and
+#' factor, using Susie-RSS. Uses the lambda parameters learned by learn_lambda
+#' for regularization. Adjusts other Susie parameters adaptively according to
+#' lambda, i.e. the "L" (number of effects) parameter and clumping threshold.
+#' 
+#' @param sumstats A list object, usually read by gather_sumstats. The list has
+#' three matrices with SNPs as rows and exposure traits as columns. These
+#' are "betas" (effect size estimates of SNPs on exposures), "stderrs" 
+#' (standard errors of the betas), and "Z" (the z-scores, i.e. betas/stderrs).
+#' See gather_sumstats for more details.
+#' 
+#' @param ld numeric LD matrix corresponding to the SNPs in sumstats
+#' 
+#' @param lambda numeric vector of lambda parameters, one per trait, learned by
+#' learne_lambda.
+#' 
+#' @param nome DEPRECATED. used only for internal testing. in this case,
+#' it automatically returns the "betas" as the weights, as it assumes a no
+#' measurement error (nome) model.
+#' 
+#' @param N number of samples used to generate the exposure data, passed as an
+#' argument to susie-rss.
+#' 
+#' @param L maximum number of effects (per-trait) susie-rss can model
+#' 
+#' @param prune_min this sets the minimum LD clumping threshold allowed to be
+#' applied for any trait, after adjusting for the lambda parameter.
+#' 
+#' @param prune_max this sets the maximum LD clumping threshold allowed to be
+#' applied for any trait, after adjusting for the lambda parameter.
+#' 
+#' @returns a numeric matrix of weights learned for each SNP on each exposure
+#' and factor, with one row per SNP and one column per factor.
+#' 
+#' @export
 learn_weights = function(sumstats, ld, lambda, nome=F, N=10000, L=10, 
                          prune_min=0.1, prune_max=0.5) {
   z_gx = as.matrix(sumstats$betas / sumstats$stderrs)
@@ -162,8 +407,37 @@ learn_weights = function(sumstats, ld, lambda, nome=F, N=10000, L=10,
 }
 
 
-# precompute, for each independent locus, the numerator and denominator of the
-#   formula for imputing the exposure-outcome z-score (zxy)
+#' Precompute values for Z-scores and R for this locus
+#' 
+#' @description
+#' FAMR-Susie builds a Z-score for each exposure and factor with the outcome, as
+#' well as a matrix of their correlations with one another (R). In general, 
+#' these would be constructed using all SNPs across the genome with an effect on
+#' any exposure or factor. However, that can yield a very large R matrix. 
+#' Instead, we can "precompute" some values needed to compute Z and R separately
+#' for each independent locus, which is what this method does, and then build
+#' Z and R later using the precomputed values from each locus.
+#' 
+#' @param weights a numeric matrix of "weights" of each SNP on each exposure and
+#' factor in this locus, usually learned by learn_weights, with one row per SNP
+#' and one column per exposure/factor.
+#' 
+#' @param z_gy a vector of SNP Z-scores on the outcome trait
+#' 
+#' @param ld the LD matrix corresponding to the SNPs in weights
+#' 
+#' @param orig_z_gy SNP z-scores on the outcome trait prior to annihilation, if
+#' applicable. see annihilate_factors.
+#' 
+#' @param n_factors number of inferred factors
+#' 
+#' @returns a list with three values, "numerator", "wRw", and "Rgx". numerator
+#' is the numerator of the z-score for this locus. wRw is a normalizing matrix
+#' of associations between traits, used for computing both Z and R. "Rgx" is
+#' a matrix of SNP-trait correlations, with one row per SNP and one column per
+#' exposure/factor.
+#' 
+#' @export
 precompute_zxy = function(weights, z_gy, ld, orig_z_gy=c(), n_factors=0) {
   z_gy = as.matrix(z_gy)
   if(n_factors == 0 || length(orig_z_gy) == 0) {
@@ -181,8 +455,75 @@ precompute_zxy = function(weights, z_gy, ld, orig_z_gy=c(), n_factors=0) {
 }
 
 
-# gather summary statistics across all loci.
-# can merge in gwas for the outcome (y) if provided separately (in y_gwas)
+#' Gather summary statistics for exposures
+#' 
+#' @description
+#' Given directories containing summary statistics and LD matrices for one or
+#' more independent loci, reads in this data and merges it with data for the
+#' outcome trait, if applicable. Also performs LD clumping to reduce 
+#' computational cost.
+#' 
+#' @param in_dir A directory with input rds files containing summary statistics
+#' for the exposures, with one file per locus. Each file should be a list object
+#' with three matrices with SNPs as rows and exposure traits as columns. These
+#' are "betas" (effect size estimates of SNPs on exposures), "stderrs" 
+#' (standard errors of the betas), and "Z" (the z-scores, i.e. betas/stderrs).
+#' Optionally can also include corresponding vectors betas_y, stderrs_y, and
+#' zscores_y for the outcome trait ("y"); alternatively, those can be read in
+#' separately via the read_y_gwas function.
+#' Finally, it has a vector 'pos' with the SNP names.
+#' 
+#' @param ld_dir A directory with input rds files containing LD matrices
+#' corresponding to the SNPs in the summary statistics files, with one file
+#' per locus. These should simply be numerical nSNP-by-nSNP matrices.
+#' 
+#' @param y_gwas A list with four items: names_y, betas_y, stderrs_y, and
+#' zscores_y, giving the IDs, estimated effect sizes, standard errors, and 
+#' z-scores of the SNPs on the outcome trait, respectively. Usually produced
+#' by the read_y_gwas function. If data for the outcome is included in the files
+#' in in_dir, leave this blank (default).
+#' 
+#' @param oracle_mode DEPRECATED. Used for internal testing purposes.
+#' 
+#' @param prune_thresh LD clumping threshold; a numeric value between 0 and 1.
+#' Default is 0.5.
+#' 
+#' @param fa_prune_thresh Stricter LD clumping threshold used to generate a set
+#' of SNPs to be input to factor analysis. Default: 0.1.
+#' 
+#' @returns A list object with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{betas_y}{A vector of estimated effect sizes of SNPs on the outcome.}
+#' 
+#' \item{stderrs_y}{A vector of standard errors for betas_y.}
+#' 
+#' \item{zscores_y}{A vector of z-scores of SNPs on the outcome, equal to
+#' betas_y divided by stderrs_y.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{locus_idx}{A vector matching SNPs to which locus they come from, 
+#' indexed in the order the loci are read from in_dir.}
+#' 
+#' \item{lambda}{A matrix of lambda values learned by learn_lambda for each 
+#' exposure in each locus, where each row of the matrix corresponds to a locus
+#' and the columns are the exposures.}
+#' 
+#' \item{ss_for_fa}{A list object with the "betas", "stderrs", "Z", "weights", 
+#' and "pos" fields, but only for the SNPs to be input to factor analysis.}
+#' 
+#' @export
 gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F, 
                            prune_thresh=1.0, fa_prune_thresh=1.0) {
   message('Gathering summary statistics data...')
@@ -227,8 +568,79 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 }
 
 
-# equivalent of gather_sumstats, but takes data directly as input rather than
-#   reading it in from files
+#' Gather summary statistics for exposures from R objects
+#' 
+#' @description
+#' Similar to gather_sumstats, but takes R objects as input instead of 
+#' directories containing files. In other words, it assumes the data has
+#' already been read in, so we just need to merge in the outcome data, 
+#' perform LD clumping, and learn lambda regularization parameters.
+#' 
+#' @param all_ss A list object with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{locus_idx}{A vector matching SNPs to which locus they come from, 
+#' indexed in the order the loci are read from in_dir.}
+#' 
+#' @param all_ld A list mapping locus indices (see above) to the corresponding
+#' LD matrices for that locus. These should be numerical nSNP-by-nSNP matrices.
+#' 
+#' @param y_gwas A list with four items: names_y, betas_y, stderrs_y, and
+#' zscores_y, giving the IDs, estimated effect sizes, standard errors, and 
+#' z-scores of the SNPs on the outcome trait, respectively. Usually produced
+#' by the read_y_gwas function. If data for the outcome is included in the files
+#' in in_dir, leave this blank (default).
+#' 
+#' @param oracle_mode DEPRECATED. Used for internal testing purposes.
+#' 
+#' @param prune_thresh LD clumping threshold; a numeric value between 0 and 1.
+#' Default is 0.5.
+#' 
+#' @param fa_prune_thresh Stricter LD clumping threshold used to generate a set
+#' of SNPs to be input to factor analysis. Default: 0.1.
+#' 
+#' @returns A list object with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{betas_y}{A vector of estimated effect sizes of SNPs on the outcome.}
+#' 
+#' \item{stderrs_y}{A vector of standard errors for betas_y.}
+#' 
+#' \item{zscores_y}{A vector of z-scores of SNPs on the outcome, equal to
+#' betas_y divided by stderrs_y.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{locus_idx}{A vector matching SNPs to which locus they come from, 
+#' indexed in the order the loci are read from in_dir.}
+#' 
+#' \item{lambda}{A matrix of lambda values learned by learn_lambda for each 
+#' exposure in each locus, where each row of the matrix corresponds to a locus
+#' and the columns are the exposures.}
+#' 
+#' \item{ss_for_fa}{A list object with the "betas", "stderrs", "Z", "weights", 
+#' and "pos" fields, but only for the SNPs to be input to factor analysis.}
+#' 
+#' @export
 gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F, 
                                     prune_thresh=1.0, fa_prune_thresh=1.0) {
   message('Gathering summary statistics data...')
@@ -272,7 +684,57 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 
 
 
-# generate factors for FAMR if requested by user
+#' Generate factors for FAMR-Susie
+#' 
+#' @description
+#' Generate factors given the summary statistics read in by gather_sumstats.
+#' Since the factors are usually learned with a more strictly LD-clumped set
+#' of summary statistics, this function also imputes the SNP-factor effect size
+#' estimates for the rest of the SNPs.
+#' 
+#' @param fa_method A string providing the factor analysis method to use.
+#' Currently this only recognizes 'gfa', but this could be extended to recognize
+#' other options in the future. If anything other than 'gfa' is passed in, the
+#' method assumes no factors should be generated.
+#' 
+#' @param sumstats Input summary statistics to use for factor analysis, usually
+#' from gather_sumstats. A list object with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' @param N Sample size of the studies used to generate GWAS summary statistics.
+#' 
+#' @param given_factors DEPRECATED. A file path to factor summary statistics 
+#' that have been pre-generated by the user. Used for internal testing purposes.
+#' 
+#' @param full_ss Similar to sumstats, but contains the full set of SNPs to be
+#' used in further analysis, i.e. if prune_thresh is greater than 
+#' fa_prune_thresh in gather_sumstats.
+#' 
+#' @returns A list object containing inferred summary statistics for factors,
+#' with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{n_factors}{Number of inferred factors.}
+#' 
+#' @export
 generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
                             full_ss=c()) {
   factor_sumstats = list('n_factors' = 0)
@@ -329,7 +791,86 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 }
 
 
-# impute Z and R values needed for FAMR, including for factors
+#' Learn weights for SNPs, compute values for Z and R, merge data across loci
+#' 
+#' @description
+#' Essentially this is a large wrapper function that takes the summary 
+#' statistics for exposures and factors and prepares the data necessary to
+#' impute Z-scores and the R matrix used in the cTWAS/Susie regression step.
+#' Merges sumstats for exposures and factors, learns weights on both exposures 
+#' and factors, precomputes values needed to impute entries of the Z-scores 
+#' vector and R matrix corresponding to exposures and factors, and LD clumps 
+#' and merges all of this data into a single sumstats object and LD object.
+#' 
+#' @param all_sumstats A list object, usually generated by gather_sumstats, 
+#' with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{betas_y}{A vector of estimated effect sizes of SNPs on the outcome.}
+#' 
+#' \item{stderrs_y}{A vector of standard errors for betas_y.}
+#' 
+#' \item{zscores_y}{A vector of z-scores of SNPs on the outcome, equal to
+#' betas_y divided by stderrs_y.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{locus_idx}{A vector matching SNPs to which locus they come from, 
+#' indexed in the order the loci are read from in_dir.}
+#' 
+#' \item{lambda}{A matrix of lambda values learned by learn_lambda for each 
+#' exposure in each locus, where each row of the matrix corresponds to a locus
+#' and the columns are the exposures.}
+#' 
+#' @param factor_ss A list object containing inferred summary statistics for 
+#' factors, usually from generate_factors, with the following elements:
+#' 
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
+#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
+#' stderrs.}
+#' 
+#' \item{pos}{A vector of SNP names.}
+#' 
+#' \item{n_factors}{Number of inferred factors.}
+#' 
+#' @param nome DEPRECATED. Boolean value indicating whether to assume a "no
+#' measurement error" model. Default: FALSE. Used for internal testing purposes.
+#' 
+#' @param prune_thresh Numeric value between 0 and 1 indicating a final LD
+#' clumping threshold to be applied to the data before merging the loci.
+#' SNPs removed in this step will still be used to learn weights and compute
+#' Z and R, but will not be included in the final cTWAS/Susie regression.
+#' 
+#' @returns A list object with the following elements:
+#' 
+#' \item{sumstats}{A list object containing summary statistics for all exposures
+#' and factors; see the all_sumstats parameter for format.}
+#' 
+#' \item{ld}{A sparse Matrix object with the LD for the SNPs in the sumstats 
+#' object.}
+#' 
+#' \item{numerator}{A numeric vector representing the numerator of the Z-scores
+#' for each exposure and factor.}
+#' 
+#' \item{wRw}{A numeric matrix of associations between traits (exposures and 
+#' factors), used for computing both Z and R}
+#' 
+#' \item{Rgx}{A numeric matrix of inferred correlations between SNPs and 
+#' traits (exposures and outcomes), with one row per SNP and one column per 
+#' exposure/factor.}
+#' 
+#' @export
 learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000, 
                                    nome=F, prune_thresh=1.0) {
   message('Computing Z-scores and LD for exposures and factors...')
@@ -377,7 +918,77 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 }
 
 
-# run zscore and ld imputation, EM estimation, and regression on all data
+#' Run cTWAS-style regression framework
+#' 
+#' @description
+#' Given the output from learn_wts_precomp_merge, computes the final Z-score
+#' vector and R matrix, uses a cTWAS-style framework to infer priors for each
+#' "class" of variables (SNPs and exposures/factors), and then generates the
+#' final PIPs for each variable using Susie-RSS. Also runs a separate
+#' factor-only regression to isolate factor effects from exposure effects.
+#' 
+#' @param dat A list object, usually from learn_wts_precomp_merge, with the
+#' following elements:
+#' 
+#' \item{sumstats}{A list object containing summary statistics for all exposures
+#' and factors; see the all_sumstats parameter of learn_wts_precomp_merge 
+#' for the format.}
+#' 
+#' \item{ld}{A sparse Matrix object with the LD for the SNPs in the sumstats 
+#' object.}
+#' 
+#' \item{numerator}{A numeric vector representing the numerator of the Z-scores
+#' for each exposure and factor.}
+#' 
+#' \item{wRw}{A numeric matrix of associations between traits (exposures and 
+#' factors), used for computing both Z and R}
+#' 
+#' \item{Rgx}{A numeric matrix of inferred correlations between SNPs and 
+#' traits (exposures and outcomes), with one row per SNP and one column per 
+#' exposure/factor.}
+#' 
+#' @param L a numeric value representing the maximum number of effects (more
+#' precisely, credible sets) Susie-RSS can model on the outcome
+#' 
+#' @param n_iter number of cTWAS expectation-maximization (EM) iterations to 
+#' run for fitting prior parameters; usually 10-30 is good.
+#' 
+#' @param n_expo number of exposures being analyzed
+#' 
+#' @param n_samp number of samples used to generate exposure summary statistics
+#' 
+#' @param annih boolean indicating whether the annihilate flag was used
+#' (whether factors were regressed out of exposures and outcome). See
+#' annihilate_factors for more details.
+#' 
+#' @returns A list with some or all of the following elements:
+#'
+#' \item{pips}{A list of the learned PIPs for each exposure, factor, and SNP.}
+#' 
+#' \item{zscores}{A list of the marginal association z-scores learned for each
+#' exposure, factor, and SNP with the outcome.}
+#' 
+#' \item{R}{A matrix of the estimated correlations between each pair of 
+#' variables (exposures, factors, and SNPs).}
+#' 
+#' \item{susieres}{The full susie_rss results object. See the susieR 
+#' documentation for more details.}
+#' 
+#' \item{priors}{A list containing the learned prior effect probabilities and
+#' prior effect variances learned for each class of variables (i.e. SNPs and
+#' exposures/factors).}
+#' 
+#' \item{posterior_mean}{A list containing the posterior means learned for 
+#' each variable by susie_rss.}
+#' 
+#' \item{posterior_var}{A list containing the posterior variances learned for 
+#' each variable by susie_rss.}
+#' 
+#' \item{factor_corrs}{A matrix of correlations between the learned factor
+#' summary statistics and those of the exposures. Deprecated in favor of the
+#' R matrix.}
+#' 
+#' @export
 run_modified_ctwas = function(dat, L, n_iter, n_expo, n_samp, annih) {
   message('Running FAMR...')
   # impute exposure z-scores on outcome and ld with SNPs using precomputed data
