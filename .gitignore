@@ -54,5 +54,5 @@ FAMR.Rproj
 # Other
 .Rbuildignore
 docs
-.github/
-_pkgdown.yml
+#.github/
+#_pkgdown.yml
