@@ -2776,12 +2776,33 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   }
 }
 
+# correlation for sparse Matrices, courtesy of:
+#    https://stackoverflow.com/a/9626089
+sparse_cor <- function(x){
+  n <- nrow(x)
+  cMeans <- colMeans(x)
+  covmat <- (as.matrix(crossprod(x)) - n*tcrossprod(cMeans))/(n-1)
+  sdvec <- sqrt(diag(covmat)) 
+  cormat <- covmat/tcrossprod(sdvec)
+  list(cov=covmat,cor=cormat)
+}
+
+# version of cov2cor for sparse matrices
+#' @importFrom Matrix diag Diagonal
+#' @keywords internal
+sparse_cov2cor <- function(cov_matrix) {
+  std_devs <- sqrt(Matrix::diag(cov_matrix))
+  if (any(std_devs == 0)) warning("Some variables have zero variance")
+  D_inv <- Diagonal(x = ifelse(std_devs > 0, 1 / std_devs, 0))
+  return(D_inv %*% cov_matrix %*% D_inv)
+}
+
 # Correlation function with specified warning muffled.
 #
 #' @importFrom stats cor
 #' @keywords internal
 muffled_corr = function (x)
-  withCallingHandlers(cor(x),
+  withCallingHandlers(sparse_cor(x),
                       warning = function(w) {
                         if (grepl("the standard deviation is zero",w$message))
                           invokeRestart("muffleWarning")
@@ -2792,7 +2813,7 @@ muffled_corr = function (x)
 #' @importFrom stats cov2cor
 #' @keywords internal
 muffled_cov2cor = function (x)
-  withCallingHandlers(cov2cor(x),
+  withCallingHandlers(sparse_cov2cor(x),
     warning = function(w) {
       if (grepl("had 0 or NA entries; non-finite result is doubtful",
                 w$message))
@@ -2800,6 +2821,7 @@ muffled_cov2cor = function (x)
       })
 
 # Check for symmetric matrix.
+#' @importFrom Matrix isSymmetric
 #' @keywords internal
 is_symmetric_matrix = function (x) {
   res = isSymmetric(x)
