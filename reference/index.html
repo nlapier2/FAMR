@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">FAMR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,18 +48,6 @@
         <dd>Regress factors out of exposures and outcome</dd>
       </dl><dl><dt>
 
-          <code><a href="coef.susie.html">coef(<i>&lt;susie&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Extract regression coefficients from susie fit</dd>
-      </dl><dl><dt>
-
-          <code><a href="compute_ss.html">compute_ss()</a></code>
-
-        </dt>
-        <dd>Compute sufficient statistics for susie.</dd>
-      </dl><dl><dt>
-
           <code><a href="estimate_priors_EM.html">estimate_priors_EM()</a></code>
 
         </dt>
@@ -96,18 +84,6 @@
         <dd>Run final Susie-RSS regression and return results</dd>
       </dl><dl><dt>
 
-          <code><a href="gfa_factor_prune_full.html">gfa_factor_prune_full()</a></code>
-
-        </dt>
-        <dd>Prune GFA factors associated with only one exposure</dd>
-      </dl><dl><dt>
-
-          <code><a href="impute_exposure_corrs.html">impute_exposure_corrs()</a></code>
-
-        </dt>
-        <dd>Form correlation matrix of all variables</dd>
-      </dl><dl><dt>
-
           <code><a href="ld_prune_famr.html">ld_prune_famr()</a></code>
 
         </dt>
@@ -132,40 +108,10 @@
         <dd>Learn weights for SNPs, compute values for Z and R, merge data across loci</dd>
       </dl><dl><dt>
 
-          <code><a href="merge_ld.html">merge_ld()</a></code>
-
-        </dt>
-        <dd>Merge LD for a locus into overall LD matrix</dd>
-      </dl><dl><dt>
-
-          <code><a href="merge_outcome.html">merge_outcome()</a></code>
-
-        </dt>
-        <dd>Merge outcome and exposure summary statistics</dd>
-      </dl><dl><dt>
-
-          <code><a href="merge_sumstats.html">merge_sumstats()</a></code>
-
-        </dt>
-        <dd>Merge sumstats for a locus into overall sumstats</dd>
-      </dl><dl><dt>
-
           <code><a href="precompute_zxy.html">precompute_zxy()</a></code>
 
         </dt>
         <dd>Precompute values for Z-scores and R for this locus</dd>
-      </dl><dl><dt>
-
-          <code><a href="predict.susie.html">predict(<i>&lt;susie&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Predict outcomes or extract coefficients from susie fit.</dd>
-      </dl><dl><dt>
-
-          <code><a href="prune_and_merge.html">prune_and_merge()</a></code>
-
-        </dt>
-        <dd>Wrapper function to clump and merge SNPs</dd>
       </dl><dl><dt>
 
           <code><a href="read_vcf.html">read_vcf()</a></code>
@@ -198,58 +144,10 @@
         <dd>Run Susie-RSS with cTWAS-inferred priors</dd>
       </dl><dl><dt>
 
-          <code><a href="subset_sumstats.html">subset_sumstats()</a></code>
-
-        </dt>
-        <dd>Subset summary statistics objects</dd>
-      </dl><dl><dt>
-
-          <code><a href="susie.html">susie()</a></code> <code><a href="susie.html">susie_suff_stat()</a></code>
-
-        </dt>
-        <dd>Sum of Single Effects (SuSiE) Regression</dd>
-      </dl><dl><dt>
-
-          <code><a href="susie_get_methods.html">susie_get_objective()</a></code> <code><a href="susie_get_methods.html">susie_get_posterior_mean()</a></code> <code><a href="susie_get_methods.html">susie_get_posterior_sd()</a></code> <code><a href="susie_get_methods.html">susie_get_niter()</a></code> <code><a href="susie_get_methods.html">susie_get_prior_variance()</a></code> <code><a href="susie_get_methods.html">susie_get_residual_variance()</a></code> <code><a href="susie_get_methods.html">susie_get_lfsr()</a></code> <code><a href="susie_get_methods.html">susie_get_posterior_samples()</a></code> <code><a href="susie_get_methods.html">susie_get_cs()</a></code> <code><a href="susie_get_methods.html">susie_get_pip()</a></code>
-
-        </dt>
-        <dd>Inferences From Fitted SuSiE Model</dd>
-      </dl><dl><dt>
-
-          <code><a href="susie_init_coef.html">susie_init_coef()</a></code>
-
-        </dt>
-        <dd>Initialize a susie object using regression coefficients</dd>
-      </dl><dl><dt>
-
           <code><a href="susie_rss.html">susie_rss()</a></code>
 
         </dt>
         <dd>Sum of Single Effects (SuSiE) Regression using summary statistics</dd>
-      </dl><dl><dt>
-
-          <code><a href="univariate_regression.html">univariate_regression()</a></code>
-
-        </dt>
-        <dd>Perform Univariate Linear Regression Separately for Columns of X</dd>
-      </dl><dl><dt>
-
-          <code><a href="update_alpha_tau2.html">update_alpha_tau2()</a></code>
-
-        </dt>
-        <dd>Update posterior parameters after running Susie-RSS</dd>
-      </dl><dl><dt>
-
-          <code><a href="update_pi_sigma2.html">update_pi_sigma2()</a></code>
-
-        </dt>
-        <dd>Update cTWAS priors</dd>
-      </dl><dl><dt>
-
-          <code><a href="write_famr_res.html">write_famr_res()</a></code>
-
-        </dt>
-        <dd>Write FAMR-Susie results to a file</dd>
       </dl></div>
   </main></div>
 
