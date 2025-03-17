@@ -49,3 +49,4 @@ and posterior variance (tau2) of each variable in each "class" (SNPs and
 exposures/factors). Part of the cTWAS Expectation-Maximization (EM) algorithm
 to fit class-specific prior parameters for Susie-RSS.
 }
+\keyword{internal}

@@ -55,7 +55,9 @@ only.}
 tolerance level.}
 
 \item{prior_tol}{Filter out effects having estimated prior variance
-smaller than this threshold.}
+smaller than this threshold.
+
+@keywords internal}
 
 \item{susie_fit}{A susie fit, an output from \code{\link{susie}}.}
 
@@ -143,3 +145,4 @@ fit.}
 These functions access basic properties or draw
 inferences from a fitted susie model.
 }
+\keyword{internal}

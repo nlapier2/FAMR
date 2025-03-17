@@ -32,3 +32,4 @@ SNPs, exposures, and factors, given the weights learned by learn_weights in f
 amr.R and the LD between the SNPs. Can optionally take in wRw and Rgx
 (see below) if those have already been computed.
 }
+\keyword{internal}

@@ -50,3 +50,4 @@ A modified version of ss with only the SNPs specified by idx kept.
 Subset a summary statistics object ("ss") according to the indices provided
 by idx, i.e. retain only the SNPs at the positions given by idx.
 }
+\keyword{internal}

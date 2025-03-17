@@ -22,3 +22,4 @@ to be used by \code{susie}.
 \description{
 Initialize a susie object using regression coefficients
 }
+\keyword{internal}

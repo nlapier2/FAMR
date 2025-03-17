@@ -43,3 +43,4 @@ regression y ~ x separately for each column x of X. Each regression
 is implemented using \code{.lm.fit()}. The estimated effect size
 and stardard error for each variable are outputted.
 }
+\keyword{internal}

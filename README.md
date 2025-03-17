@@ -15,6 +15,27 @@ alleviate other challenges such as other violations of MR assumptions and
 sparsity.
 
 
+### Installation
+
+The simplest way to install this package is to open an R shell and run
+
+```
+library(devtools)
+devtools::install_github('nlapier2/FAMR')
+```
+
+Then you can run
+
+```
+library(FAMR)
+```
+
+to load the package.
+
+
+### Acknowledgements
+
+
 This repository contains code modified from the susieR and cTWAS packages,
 with permission from the authors.
 

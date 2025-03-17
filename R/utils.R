@@ -45,6 +45,8 @@
 #' 
 #' @returns A modified version of ss with only the SNPs specified by idx kept.
 #' 
+#' @keywords internal
+#' 
 subset_sumstats = function(ss, idx) {
   ss$betas = ss$betas[idx, , drop=F]
   ss$stderrs = ss$stderrs[idx, , drop=F]
@@ -119,6 +121,8 @@ subset_sumstats = function(ss, idx) {
 #' @returns A list object in the same format as all_sumstats, with the merged
 #' summary statistics from all_sumstats and locus_sumstats.
 #' 
+#' @keywords internal
+#' 
 merge_sumstats = function(all_sumstats, locus_sumstats, by_row=T) {
   if(length(all_sumstats) == 0 || !('betas' %in% names(all_sumstats))) {
     return(locus_sumstats)
@@ -171,6 +175,8 @@ merge_sumstats = function(all_sumstats, locus_sumstats, by_row=T) {
 #' 
 #' @returns A numeric matrix or sparse Matrix object containing the SNPs of both
 #' all_ld and locus_ld.
+#' 
+#' @keywords internal
 #' 
 merge_ld = function(all_ld, locus_ld) {
   if(length(all_ld) == 0) {
@@ -319,6 +325,8 @@ run_gfa_full = function(x_betas, x_stderrs, N) {
 #' @returns A GFA object (see GFA for more details); a modified version of 
 #' gfares that contains only the factors that passed the filter.
 #' 
+#' @keywords internal
+#' 
 gfa_factor_prune_full = function(x_betas, gfares, thresh = 0.1, min_count = 2) {
   r2_matrix = cor(x_betas, gfares$L_hat)^2
   keep_indices = which(apply(r2_matrix, 2, function(x) sum(x > thresh)) >= min_count)
@@ -356,6 +364,8 @@ gfa_factor_prune_full = function(x_betas, gfares, thresh = 0.1, min_count = 2) {
 #' correlations between all SNPs, exposures, and factors.
 #' 
 #' @importFrom Matrix Matrix
+#' 
+#' @keywords internal
 #' 
 impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
   # initialize bottom corner of R as SNP ld matrix
@@ -410,6 +420,8 @@ impute_exposure_corrs = function(ld, weights, wRw=c(), Rgx=c()) {
 #' @returns nothing
 #' 
 #' @importFrom utils write.table
+#' 
+#' @keywords internal
 #' 
 write_famr_res = function(out, famr_res, K, fa_method, for_sim=F) {
   # construct method_name which identifies the FA method used
@@ -544,6 +556,8 @@ ld_prune_famr = function(sumstats, ld, prune_thresh) {
 #' @returns A list object in the same format as dat, containing the SNPs in both
 #' dat and those from sumstats that were not removed during LD clumping.
 #' 
+#' @keywords internal
+#' 
 prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh, 
                            f_idx, oracle_mode=F) {
   if(!oracle_mode) {  # don't prune in oracle mode since all SNPs are truly causal
@@ -620,6 +634,8 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 #' the same as the input LD matrix except without the SNPs that are unmeasured
 #' in y_gwas.}
 #' }
+#' 
+#' @keywords internal
 #' 
 merge_outcome = function(sumstats, ld, y_gwas) {
   if(is.null(nrow(sumstats$pos))) {  # if pos is only a vector of IDs

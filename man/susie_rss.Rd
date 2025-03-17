@@ -183,6 +183,8 @@ level.}
 
 \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
   \%*\% colSums(alpha*mu)}.}
+
+@keywords internal
 }
 \description{
 \code{susie_rss} performs sum of single-effect linear

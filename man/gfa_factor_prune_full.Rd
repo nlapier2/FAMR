@@ -30,3 +30,4 @@ that exposure. This helper function removes those factors heuristically, by
 removing factors that do not have an R^2 above some value ("thresh") with at
 least "min_count" exposures.
 }
+\keyword{internal}

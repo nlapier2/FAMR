@@ -44,6 +44,8 @@
 #' the variables of that class}
 #' }
 #' 
+#' @keywords internal
+#' 
 update_alpha_tau2 = function(res, n_vars) {
   alpha = list()
   tau2 = list()
@@ -94,6 +96,8 @@ update_alpha_tau2 = function(res, n_vars) {
 #' conditioned on the variable having an effect, for each class of variables}
 #' }
 #' 
+#' @keywords internal
+#' 
 update_pi_sigma2 = function(alpha, tau2) {
   new_pi = list()
   new_sigma2 = list()
@@ -133,6 +137,7 @@ update_pi_sigma2 = function(alpha, tau2) {
 #' 
 #' @returns A Susie-RSS results object. See the susieR documentation for more
 #' details.
+#' 
 #' 
 run_susie_with_priors = function(zscores, R, prior_pi=c(), prior_sigma2=c(), 
                                  L=10) {

@@ -33,3 +33,4 @@ previous cTWAS priors, update the cTWAS prior inclusion probability and
 prior variance for each class of variables (i.e. SNPs and exposures/factors).
 Part of the cTWAS EM algorithm.
 }
+\keyword{internal}

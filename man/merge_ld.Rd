@@ -24,3 +24,4 @@ so far and an LD matrix for the current locus, merges the two together
 into a new LD matrix and returns that. LD between different loci is assumed
 to be zero.
 }
+\keyword{internal}

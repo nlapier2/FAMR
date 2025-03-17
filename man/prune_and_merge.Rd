@@ -74,3 +74,4 @@ then subsets those SNPs, then merges the SNPs for this locus into an object
 collecting summary statistics over all loci. Used by gather_sumstats to read
 individual locus files into a single object in memory.
 }
+\keyword{internal}

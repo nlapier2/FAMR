@@ -10,6 +10,7 @@
 #' @return A list of sufficient statistics.
 #' 
 #' @importFrom methods as
+#' @keywords internal
 #' 
 compute_ss = function(X, y, standardize = TRUE) {
   y = y - mean(y)
@@ -177,6 +178,7 @@ estimate_residual_variance_ss = function (XtX, Xty, s, yty, n)
 #' @return A list with elements \code{alpha}, \code{mu} and \code{mu2}
 #'   to be used by \code{susie}.
 #'
+#' @keywords internal
 #'
 susie_init_coef = function (coef_index, coef_value, p) {
   L = length(coef_index)
@@ -370,6 +372,8 @@ init_finalize_rss = function (s, R = NULL, Rz = NULL) {
 #'
 #' @method coef susie
 #' 
+#' @keywords internal
+#' 
 coef.susie = function (object, ...) {
   s = object
   return(c(s$intercept,colSums(s$alpha*s$mu)/s$X_column_scale_factors))
@@ -395,6 +399,8 @@ coef.susie = function (object, ...) {
 #' @importFrom stats coef
 #'
 #' @method predict susie
+#' 
+#' @keywords internal
 #' 
 predict.susie = function (object, newx = NULL,
                           type = c("response","coefficients"), ...) {
@@ -455,6 +461,8 @@ set_R_attributes = function (R, r_tol) {
 #
 #' @importFrom Matrix rowSums
 #' @importFrom Matrix colMeans
+#' 
+#' @keywords internal
 set_X_attributes = function(X, center = TRUE, scale = TRUE) {
     
   # if X is a trend filtering matrix
@@ -503,6 +511,7 @@ set_X_attributes = function(X, center = TRUE, scale = TRUE) {
 # @return a p vector of column standard deviations.
 #
 #' @importFrom Matrix colSums
+#' @keywords internal
 compute_colSds = function(X) {
   n = nrow(X)
   return(sqrt((colSums(X^2)/n - (colSums(X)/n)^2)*(n/(n-1))))
@@ -685,6 +694,9 @@ optimize_prior_variance = function (optimize_V, betahat, shat2, prior_weights,
 # 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
+#' 
+#' @keywords internal
+#' 
 loglik = function (V, betahat, shat2, prior_weights) {
 
   #log(bf) for each SNP
@@ -707,6 +719,8 @@ neg.loglik.logscale = function(lV,betahat,shat2,prior_weights)
 
 #' @importFrom Matrix colSums
 #' @importFrom stats dnorm
+#' @keywords internal
+#' 
 loglik.grad = function(V, betahat, shat2, prior_weights) {
 
   # log(bf) for each SNP.
@@ -926,6 +940,7 @@ single_effect_regression_ss =
 # 
 #' @importFrom Matrix t
 #' @importFrom Matrix tcrossprod
+#' @keywords internal
 compute_Xb = function (X, b) {
   cm = attr(X,"scaled:center")
   csd = attr(X,"scaled:scale")
@@ -953,6 +968,7 @@ compute_Xb = function (X, b) {
 # 
 #' @importFrom Matrix t
 #' @importFrom Matrix crossprod
+#' @keywords internal
 compute_Xty = function (X, y) {
   cm = attr(X,"scaled:center")
   csd = attr(X,"scaled:scale")
@@ -980,6 +996,7 @@ compute_Xty = function (X, y) {
 # @return a L by n matrix
 # 
 #' @importFrom Matrix t
+#' @keywords internal
 compute_MXt = function (M, X) {
   cm = attr(X,"scaled:center")
   csd = attr(X,"scaled:scale")
@@ -1213,6 +1230,8 @@ compute_MXt = function (M, X) {
 #'
 #' @importFrom stats var
 #' @importFrom utils modifyList
+#' 
+#' @keywords internal
 #'
 susie <- function (X,Y,L = min(10,ncol(X)),
                    scaled_prior_variance = 0.2,
@@ -1598,6 +1617,8 @@ susie <- function (X,Y,L = min(10,ncol(X)),
 #'
 #' \item{Rr}{An p-vector of \code{t(X)} times fitted values, \code{X
 #'   \%*\% colSums(alpha*mu)}.}
+#'   
+#'   @keywords internal
 #'
 #'
 susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
@@ -1724,6 +1745,7 @@ susie_rss = function (z, R, maf = NULL, maf_thresh = 0, z_ld_weight = 0,
 # non-zero element is N(0,var = prior_variance).
 #
 #' @importFrom stats optimize
+#' @keywords internal
 susie_rss_lambda = function(z, R, maf = NULL, maf_thresh = 0,
                             L = 10, lambda = 0,
                             prior_variance = 50, residual_variance = NULL,
@@ -2000,6 +2022,8 @@ update_Sigma = function (R, sigma2, z) {
 #'   \code{Xty}. The checks are: (1) check that \code{XtX} is positive
 #'   semidefinite; (2) check that \code{Xty} is in the space spanned by
 #'   the non-zero eigenvectors of \code{XtX}.
+#'   
+#'   @keywords internal
 #'
 susie_suff_stat = function (bhat, shat, R, n, var_y, XtX, Xty, yty,
                             maf = NULL, maf_thresh = 0, L = 10,
@@ -2386,6 +2410,7 @@ check_projection = function (A, b) {
 #'   (number between 1 and L) of each reported CS in the supplied susie
 #'   fit.}
 #'
+#' @keywords internal
 #'
 susie_get_objective = function (res, last_only = TRUE, warning_tol = 1e-6) {
   if (!all(diff(res$elbo) >= (-1*warning_tol)))
@@ -2434,16 +2459,19 @@ susie_get_posterior_sd = function (res, prior_tol = 1e-9) {
 }
 
 #' @rdname susie_get_methods
+#' @keywords internal
 #'
 susie_get_niter = function (res)
   res$niter
 
 #' @rdname susie_get_methods
+#' @keywords internal
 #'
 susie_get_prior_variance = function (res)
   res$V
 
 #' @rdname susie_get_methods
+#' @keywords internal
 #'
 susie_get_residual_variance = function (res)
   res$sigma2
@@ -2451,6 +2479,8 @@ susie_get_residual_variance = function (res)
 #' @rdname susie_get_methods
 #'
 #' @importFrom stats pnorm
+#' 
+#' @keywords internal
 #'
 susie_get_lfsr = function (res) {
   pos_prob = pnorm(0,mean = t(res$mu),sd = sqrt(res$mu2 - res$mu^2))
@@ -2467,6 +2497,8 @@ susie_get_lfsr = function (res) {
 #'
 #' @importFrom stats rmultinom
 #' @importFrom stats rnorm
+#' 
+#' @keywords internal
 #'
 susie_get_posterior_samples <- function (susie_fit, num_samples) {
 
@@ -2525,6 +2557,8 @@ susie_get_posterior_samples <- function (susie_fit, num_samples) {
 #'
 #' @param squared If \code{squared = TRUE}, report min, mean and
 #' median of squared correlation instead of the absolute correlation.
+#' 
+#' @keywords internal
 #'
 susie_get_cs = function (res, X = NULL, Xcorr = NULL, coverage = 0.95,
                          min_abs_corr = 0.5, dedup = TRUE, squared = FALSE) {
@@ -2640,6 +2674,8 @@ get_cs_correlation = function (res, X = NULL, Xcorr = NULL, max = FALSE) {
 #'
 #' @param prior_tol Filter out effects having estimated prior variance
 #'   smaller than this threshold.
+#'   
+#'   @keywords internal
 #'
 susie_get_pip = function (res, prune_by_cs = FALSE, prior_tol = 1e-9) {
 
@@ -2711,6 +2747,7 @@ n_in_CS = function(res, coverage = 0.9) {
 # Subsample and compute min, mean, median and max abs corr.
 #
 #' @importFrom stats median
+#' @keywords internal
 get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
   if (length(pos) == 1)
     c(1,1,1)
@@ -2742,6 +2779,7 @@ get_purity = function(pos, X, Xcorr, squared = FALSE, n = 100) {
 # Correlation function with specified warning muffled.
 #
 #' @importFrom stats cor
+#' @keywords internal
 muffled_corr = function (x)
   withCallingHandlers(cor(x),
                       warning = function(w) {
@@ -2875,6 +2913,8 @@ susie_prune_single_effects = function (s,L = 0,V = NULL,verbose = FALSE) {
 #' @importFrom stats .lm.fit
 #' @importFrom stats coef
 #' @importFrom stats summary.lm
+#' 
+#' @keywords internal
 #'
 univariate_regression = function (X, y, Z = NULL, center = TRUE,
                                   scale = FALSE, return_residuals = FALSE) {

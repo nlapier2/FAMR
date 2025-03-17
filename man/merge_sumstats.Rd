@@ -53,3 +53,4 @@ all loci so far (all_sumstats) and summary statistics from a new locus,
 merges these two and returns a new summary statistics object.
 Also used to merge exposure and factor summary statistics.
 }
+\keyword{internal}

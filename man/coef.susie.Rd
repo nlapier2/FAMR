@@ -19,3 +19,4 @@ remaining p elements being estimated regression coefficients.
 \description{
 Extract regression coefficients from susie fit
 }
+\keyword{internal}

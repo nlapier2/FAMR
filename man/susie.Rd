@@ -233,7 +233,9 @@ to include an intercept term (and so only a p-vector is returned).}
 \code{susie_suff_stat} performs additional checks on \code{XtX} and
 \code{Xty}. The checks are: (1) check that \code{XtX} is positive
 semidefinite; (2) check that \code{Xty} is in the space spanned by
-the non-zero eigenvectors of \code{XtX}.}
+the non-zero eigenvectors of \code{XtX}.
+
+@keywords internal}
 }
 \value{
 A \code{"susie"} object with some or all of the following
@@ -323,3 +325,4 @@ Society, Series B} \url{https://doi.org/10.1101/501114}.
 \seealso{
 \code{\link{susie_rss}}
 }
+\keyword{internal}

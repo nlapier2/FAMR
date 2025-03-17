@@ -26,3 +26,4 @@ coefficients are returned.
 \description{
 Predict outcomes or extract coefficients from susie fit.
 }
+\keyword{internal}

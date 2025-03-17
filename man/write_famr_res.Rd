@@ -28,3 +28,4 @@ Writes FAMR-Susie results to a file, and optionally a simple results summary
 to an additional text file. Mainly intended to be used internally for
 simulations.
 }
+\keyword{internal}

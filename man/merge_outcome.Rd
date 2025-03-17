@@ -59,3 +59,4 @@ intersects the SNPs, then merges them into a single object. Used if
 read_y_gwas is run, i.e. if outcome summary statistics are not already
 included in the exposure summary statistics files.
 }
+\keyword{internal}
