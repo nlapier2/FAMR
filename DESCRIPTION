@@ -1,9 +1,11 @@
 Package: FAMR
 Title: Factor-Augmented Mendelian Randomization with SuSiE (FAMR-Susie)
-Version: 0.0.10
+Version: 0.0.11
 Authors@R: 
-    person("Nathan", "LaPierre", , "nathanl2012@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0003-2394-8868"))
+    c(person("Nathan", "LaPierre", , "nathanl2012@gmail.com", 
+          role = c("aut", "cre"), comment = c(ORCID = "0000-0003-2394-8868")),
+          person("Matthew","Stephens",role="aut"),
+          person("Xin","He",role="aut"))
 Description: 
     This package implements the FAMR-Susie method described in the manuscript
     "Factor-based methods for robust high-dimensional Mendelian randomization".
@@ -24,5 +26,5 @@ RoxygenNote: 7.3.2
 LazyData: true
 Depends: R (>= 4.0.0)
 Imports: Matrix, MASS, data.table, dplyr, flashr, GFA, susieR, methods, rlang
-URL: https://www.nathanrlapierre.com/FAMR, http://www.nathanrlapierre.com/FAMR/
+URL: https://www.nathanrlapierre.com/FAMR, https://github.com/nlapier2/FAMR/
 BugReports: https://www.nathanrlapierre.com/FAMR/issues
