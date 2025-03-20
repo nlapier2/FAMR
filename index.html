@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">FAMR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/nlapier2/FAMR/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -47,7 +48,9 @@
   <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="factor-augmented-mendelian-randomization-with-susie-famr-susie">Factor-Augmented Mendelian Randomization with Susie (FAMR-Susie)<a class="anchor" aria-label="anchor" href="#factor-augmented-mendelian-randomization-with-susie-famr-susie"></a>
 </h1></div>
-<p>This is the repository for the FAMR package, which implements the FAMR-Susie method described in the manuscript “Factor-based methods for robust high-dimensional Mendelian randomization”. Factor-Augmented Mendelian Randomization (FAMR) is a general framework described in the manuscript, and FAMR-Susie is a specific method, but the package is simply called “FAMR” for simplicity. FAMR-Susie is intended for use in “high-dimensional” MR, where there are many genetically-correlated exposures, and simultaneously learns which of these exposures have a causal effect on the “outcome” trait. FAMR-Susie uses factor analysis to infer and correct for unobserved confounders, and uses sparse polygenic modeling and Bayesian regression to alleviate other challenges such as other violations of MR assumptions and sparsity.</p>
+<p>The <code>FAMR</code> package implements the FAMR-Susie method <a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Factor-Augmented Mendelian Randomization (FAMR) is a general framework described in the manuscript, and FAMR-Susie is a specific method, but the package is simply called “FAMR” for simplicity.&lt;/p&gt;"><sup>1</sup></a> described in the manuscript “Factor-based methods for robust high-dimensional Mendelian randomization” <a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Citation (FORTHCOMING)&lt;/p&gt;"><sup>2</sup></a>. FAMR-Susie is intended for use in “high-dimensional” MR, where there are many genetically-correlated exposures, and simultaneously learns which of these exposures have a causal effect on the “outcome” trait. For example, one application would be to simultaneously infer which of many metabolites measured in a biobank dataset have a causal effect on heart disease. FAMR-Susie uses factor analysis to infer and correct for unobserved confounders, builds sparse polygenic models of exposures and inferred factors, and then uses sparse Bayesian regression to infer which of the exposures and factors are causal. The input is GWAS summary statistics for the exposures and outcome trait of interest, and the primary output is posterior inclusion probabilities (PIPs) for the exposures and inferred factors, indicating the estimated probability that each of those traits has a causal effect on the outcome.</p>
+<p>We recommend interested users read our manuscript <a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content="&lt;p&gt;Citation (FORTHCOMING)&lt;/p&gt;"><sup>3</sup></a> for more details on our method. Additionally, the sparse polygenic modeling and Bayesian regression stages are based around modified versions of the <a href="https://xinhe-lab.github.io/ctwas/" class="external-link">cTWAS</a> and <a href="https://stephenslab.github.io/susieR/index.html" class="external-link">susieR</a> packages, so users may find it helpful to look at those for more context.</p>
+<p>Please see below for installation instructions and a link to a simple vignette. We recommend running that vignette to get a feel for using the package and the input and output format.</p>
 <div class="section level3">
 <h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h3>
@@ -59,16 +62,28 @@
 <p>to load the package.</p>
 </div>
 <div class="section level3">
-<h3 id="acknowledgements">Acknowledgements<a class="anchor" aria-label="anchor" href="#acknowledgements"></a>
+<h3 id="quick-start">Quick Start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h3>
-<p>This repository contains code modified from the susieR and cTWAS packages, with permission from the authors.</p>
-<p>susieR can be found at <a href="https://github.com/stephenslab/susieR" class="external-link uri">https://github.com/stephenslab/susieR</a></p>
-<p>cTWAS can be found at <a href="https://github.com/xinhe-lab/ctwas/" class="external-link uri">https://github.com/xinhe-lab/ctwas/</a></p>
+<p>We recommend the following vignette as a quick introduction to the package and its input and output formats:</p>
+<p>(FORTHCOMING)</p>
+</div>
+<div class="section level3">
+<h3 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
+</h3>
+<p>If you use the package, please cite our manuscript:</p>
+<p>(FORTHCOMING)</p>
+</div>
+<div class="section level3">
+<h3 id="footnotes">Footnotes<a class="anchor" aria-label="anchor" href="#footnotes"></a>
+</h3>
 </div>
 </div>
+
+
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
+<li><a href="https://github.com/nlapier2/FAMR/" class="external-link">Browse source code</a></li>
 <li><a href="https://www.nathanrlapierre.com/FAMR/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
@@ -94,6 +109,8 @@
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Nathan LaPierre <br><small class="roles"> Author, maintainer </small> <a href="https://orcid.org/0000-0003-2394-8868" target="orcid.widget" aria-label="ORCID" class="external-link"><span class="fab fa-orcid orcid" aria-hidden="true"></span></a> </li>
+<li>Matthew Stephens <br><small class="roles"> Author </small>  </li>
+<li>Xin He <br><small class="roles"> Author </small>  </li>
 </ul>
 </div>
 
@@ -104,7 +121,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Nathan LaPierre.</p>
+  <p>Developed by Nathan LaPierre, Matthew Stephens, Xin He.</p>
 </div>
 
 <div class="pkgdown-footer-right">
