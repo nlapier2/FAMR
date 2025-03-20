@@ -223,9 +223,9 @@ estimate_priors_EM = function(zscores, R, L=1, n_iter=30) {
       prior_sigma2[[k]] = rep(new_group_priors$sigma2[[k]], n_vars[[k]])
     }
     message('Current pi:')
-    message(new_group_priors$pi)
+    message(paste(new_group_priors$pi, collapse = " "))
     message('Current sigma2:')
-    message(new_group_priors$sigma2)
+    message(paste(new_group_priors$sigma2, collapse = " "))
   }
   
   # allow equal priors between all variables if n_iter=0

@@ -653,3 +653,30 @@ merge_outcome = function(sumstats, ld, y_gwas) {
   ld = ld[idx, idx, drop=F]
   return(list('sumstats' = sumstats, 'ld' = ld))
 }
+
+
+#' Warn user about traits with low number of instruments
+#' 
+#' @description
+#' Traits with few instruments with nonzero weights may be poorly predicted
+#' and thus provide somewhat less reliable results in the MR analysis. This
+#' helper functions warns users when this is the case.
+#' 
+#' @param weights A matrix of learned instrument-exposure/factor weights
+#' 
+#' @param trait_names A vector of the names of the traits
+#' 
+#' @param min_instruments Minimum number of instruments; traits with fewer
+#' instruments will trigger a warning
+#' 
+#' @returns A vector of trait names with fewer than min_instruments instruments
+#' with non-zero weights
+#' 
+warn_low_instrument = function(weights, trait_names, min_instruments=10) {
+  n_inst = apply(abs(weights), 2, function(x) sum(x > 0))
+  warn_traits = trait_names[which(n_inst < min_instruments)]
+  message('WARNING: the following traits have fewer than ', min_instruments, 
+          ' instruments, which can lead to less reliable results!')
+  message(paste(warn_traits, collapse=' '))
+  return(warn_traits)
+}

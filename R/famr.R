@@ -796,15 +796,19 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
   factor_sumstats$weights = factor_wts
 
   # also provide stderrs, zscores, snp id, etc
-  factor_sumstats$stderrs = factor_sumstats$betas * 0 + (1 / sqrt(N))
-  factor_sumstats$Z = factor_sumstats$betas / factor_sumstats$stderrs
   if(fa_method == 'gfa' && length(full_ss) > 0 && nrow(full_ss$betas) > nrow(sumstats$betas)) {
     factor_sumstats$pos = full_ss$pos
     factor_sumstats$corrs = cor(factor_sumstats$betas, full_ss$betas)
+    # stderrs are weighted average of correlated exposure stderrs
+    factor_sumstats$stderrs = t((factor_sumstats$corrs ** 2) %*% 
+        t(full_ss$stderrs)) / rowSums((factor_sumstats$corrs ** 2))
   } else {
     factor_sumstats$pos = sumstats$pos
     factor_sumstats$corrs = cor(factor_sumstats$betas, sumstats$betas)
+    factor_sumstats$stderrs = t((factor_sumstats$corrs ** 2) %*% 
+        t(sumstats$stderrs)) / rowSums((factor_sumstats$corrs ** 2))
   }
+  factor_sumstats$Z = factor_sumstats$betas / factor_sumstats$stderrs
   factor_sumstats$n_factors = max(0, ncol(factor_sumstats$betas))
   message('Number of factors detected: ', factor_sumstats$n_factors)
   return(factor_sumstats)
@@ -1027,6 +1031,8 @@ learn_wts_precomp_merge = function(all_sumstats, factor_ss, N=10000,
 #' @export
 run_modified_ctwas = function(dat, L, n_iter, n_expo, n_samp, annih) {
   message('Running FAMR...')
+  low_inst = warn_low_instrument(dat$sumstats$weights, colnames(dat$sumstats$Z), 
+                                 min_instruments=10)
   # impute exposure z-scores on outcome and ld with SNPs using precomputed data
   R = impute_exposure_corrs(dat$ld, t(as.matrix(dat$sumstats$weights)),
                                   wRw = dat$wRw, Rgx = t(dat$Rgx))
@@ -1060,6 +1066,7 @@ run_modified_ctwas = function(dat, L, n_iter, n_expo, n_samp, annih) {
 
   # run final variable selection given priors
   famr_res = get_results(zscores=effects, R=R, priors=priors, L=L)
+  famr_res$low_instrument_traits = low_inst
   
   # if appropriate, set variables for results of separate factor variable selection
   if(length(dat$factor_corrs) > 0) {
