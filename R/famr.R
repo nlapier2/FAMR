@@ -345,7 +345,7 @@ learn_lambda = function(sumstats, ld, oracle_mode=F) {
 #' applied for any trait, after adjusting for the lambda parameter.
 #' 
 #' @returns a numeric matrix of weights learned for each SNP on each exposure
-#' and factor, with one row per SNP and one column per factor.
+#' and factor, with one row per SNP and one column per exposure and factor.
 #' 
 #' @export
 learn_weights = function(sumstats, ld, lambda, nome=F, N=10000, L=10, 
@@ -629,6 +629,9 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
+#' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
 #' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
@@ -744,6 +747,9 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on factors.}
+#' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
 #' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
@@ -775,8 +781,10 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
        && nrow(full_ss$betas) > nrow(sumstats$betas)) {
       # impute GFA L_hat for full set of SNPs, if applicable
       if(is.null(dim(gfares$F_hat)))  gfares$F_hat = as.matrix(gfares$F_hat)
-      factor_wts = as.matrix(GFA:::loadings_gls(full_ss$betas, full_ss$stderrs,
-                                      cor(full_ss$betas), gfares$F_hat)$L)
+      gfa_imputed = GFA:::loadings_gls(full_ss$betas, full_ss$stderrs,
+                                       cor(full_ss$betas), gfares$F_hat)
+      factor_wts = as.matrix(gfa_imputed$L)
+      factor_sumstats$stderrs = as.matrix(gfa_imputed$S)
     } else {
       factor_wts = gfares$L_hat
     }
@@ -799,14 +807,12 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
   if(fa_method == 'gfa' && length(full_ss) > 0 && nrow(full_ss$betas) > nrow(sumstats$betas)) {
     factor_sumstats$pos = full_ss$pos
     factor_sumstats$corrs = cor(factor_sumstats$betas, full_ss$betas)
-    # stderrs are weighted average of correlated exposure stderrs
-    factor_sumstats$stderrs = t((factor_sumstats$corrs ** 2) %*% 
-        t(full_ss$stderrs)) / rowSums((factor_sumstats$corrs ** 2))
   } else {
     factor_sumstats$pos = sumstats$pos
     factor_sumstats$corrs = cor(factor_sumstats$betas, sumstats$betas)
+    # stderrs are weighted average of correlated exposure stderrs
     factor_sumstats$stderrs = t((factor_sumstats$corrs ** 2) %*% 
-        t(sumstats$stderrs)) / rowSums((factor_sumstats$corrs ** 2))
+        t(sumstats$stderrs)) 
   }
   factor_sumstats$Z = factor_sumstats$betas / factor_sumstats$stderrs
   factor_sumstats$n_factors = max(0, ncol(factor_sumstats$betas))
@@ -832,6 +838,9 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
 #' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
@@ -859,8 +868,11 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' factors, usually from generate_factors, with the following elements:
 #' 
 #' \describe{
-#' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
-#' rows corresponding to SNPs and columns corresponding to exposures.}
+#' \item{betas}{A matrix of estimated effect sizes of SNPs on factors, with
+#' rows corresponding to SNPs and columns corresponding to factors.}
+#' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
 #' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
@@ -886,7 +898,8 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
 #' 
 #' \describe{
 #' \item{sumstats}{A list object containing summary statistics for all exposures
-#' and factors; see the all_sumstats parameter for format.}
+#' and factors; see the all_sumstats parameter for format. The "weights" element
+#' now contains weights learned by Susie-RSS.}
 #' 
 #' \item{ld}{A sparse Matrix object with the LD for the SNPs in the sumstats 
 #' object.}

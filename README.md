@@ -63,7 +63,6 @@ If you use the package, please cite our manuscript:
 (FORTHCOMING)
 
 
-### Footnotes
 
 [^1]: Factor-Augmented Mendelian Randomization (FAMR) is a general framework
 described in the manuscript, and FAMR-Susie is a specific method, but the 

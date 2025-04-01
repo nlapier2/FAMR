@@ -14,6 +14,9 @@ following fields (only betas, stderrs, weights, Z required):
 \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 rows corresponding to SNPs and columns corresponding to exposures.}
 
+\item{weights}{A matrix of weights learned for each SNP on each exposure,
+with rows corresponding to SNPs and columns corresponding to exposures.}
+
 \item{stderrs}{A matrix of standard errors for the betas.}
 
 \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by

@@ -58,6 +58,9 @@ A list object with the following elements:
 \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 rows corresponding to SNPs and columns corresponding to exposures.}
 
+\item{weights}{Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.}
+
 \item{stderrs}{A matrix of standard errors for the betas.}
 
 \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by

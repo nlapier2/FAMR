@@ -44,7 +44,7 @@ applied for any trait, after adjusting for the lambda parameter.}
 }
 \value{
 a numeric matrix of weights learned for each SNP on each exposure
-and factor, with one row per SNP and one column per factor.
+and factor, with one row per SNP and one column per exposure and factor.
 }
 \description{
 Learns the "weights" (joint effect sizes) of SNPs on each exposure and

@@ -20,6 +20,9 @@ with the following elements:
 \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 rows corresponding to SNPs and columns corresponding to exposures.}
 
+\item{weights}{Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.}
+
 \item{stderrs}{A matrix of standard errors for the betas.}
 
 \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by
@@ -46,8 +49,11 @@ and the columns are the exposures.}
 factors, usually from generate_factors, with the following elements:
 
 \describe{
-\item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
-rows corresponding to SNPs and columns corresponding to exposures.}
+\item{betas}{A matrix of estimated effect sizes of SNPs on factors, with
+rows corresponding to SNPs and columns corresponding to factors.}
+
+\item{weights}{Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.}
 
 \item{stderrs}{A matrix of standard errors for the betas.}
 
@@ -74,7 +80,8 @@ A list object with the following elements:
 
 \describe{
 \item{sumstats}{A list object containing summary statistics for all exposures
-and factors; see the all_sumstats parameter for format.}
+and factors; see the all_sumstats parameter for format. The "weights" element
+now contains weights learned by Susie-RSS.}
 
 \item{ld}{A sparse Matrix object with the LD for the SNPs in the sumstats
 object.}

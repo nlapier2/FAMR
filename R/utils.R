@@ -14,6 +14,9 @@
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
+#' \item{weights}{A matrix of weights learned for each SNP on each exposure,
+#' with rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
 #' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
@@ -89,6 +92,9 @@ subset_sumstats = function(ss, idx) {
 #' \describe{
 #' \item{betas}{A matrix of estimated effect sizes of SNPs on exposures, with
 #' rows corresponding to SNPs and columns corresponding to exposures.}
+#' 
+#' \item{weights}{A matrix of weights learned for each SNP on each exposure,
+#' with rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
 #' 
@@ -512,6 +518,9 @@ ld_prune_famr = function(sumstats, ld, prune_thresh) {
 #' rows corresponding to SNPs and columns corresponding to exposures.}
 #' 
 #' \item{stderrs}{A matrix of standard errors for the betas.}
+#' 
+#' \item{weights}{Currently this is the same as betas; later used to store
+#' learned weights of SNPs on exposures and factors.}
 #' 
 #' \item{Z}{A matrix of z-scores for the exposures, equal to betas divided by 
 #' stderrs.}
