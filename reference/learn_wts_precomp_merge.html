@@ -19,7 +19,7 @@ and merges all of this data into a single sumstats object and LD object."></head
 
     <a class="navbar-brand me-2" href="../index.html">FAMR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,6 +77,11 @@ with the following elements:</p>
 rows corresponding to SNPs and columns corresponding to exposures.</p></dd>
 
 
+<dt>weights</dt>
+<dd><p>Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.</p></dd>
+
+
 <dt>stderrs</dt>
 <dd><p>A matrix of standard errors for the betas.</p></dd>
 
@@ -121,8 +126,13 @@ and the columns are the exposures.</p></dd>
 <dd><p>A list object containing inferred summary statistics for
 factors, usually from generate_factors, with the following elements:</p>
 <dl><dt>betas</dt>
-<dd><p>A matrix of estimated effect sizes of SNPs on exposures, with
-rows corresponding to SNPs and columns corresponding to exposures.</p></dd>
+<dd><p>A matrix of estimated effect sizes of SNPs on factors, with
+rows corresponding to SNPs and columns corresponding to factors.</p></dd>
+
+
+<dt>weights</dt>
+<dd><p>Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.</p></dd>
 
 
 <dt>stderrs</dt>
@@ -166,7 +176,8 @@ Z and R, but will not be included in the final cTWAS/Susie regression.</p></dd>
     <p>A list object with the following elements:</p>
 <dl><dt>sumstats</dt>
 <dd><p>A list object containing summary statistics for all exposures
-and factors; see the all_sumstats parameter for format.</p></dd>
+and factors; see the all_sumstats parameter for format. The "weights" element
+now contains weights learned by Susie-RSS.</p></dd>
 
 
 <dt>ld</dt>

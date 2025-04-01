@@ -13,7 +13,7 @@ perform LD clumping, and learn lambda regularization parameters."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">FAMR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.11</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,6 +127,11 @@ of SNPs to be input to factor analysis. Default: 0.1.</p></dd>
 <dl><dt>betas</dt>
 <dd><p>A matrix of estimated effect sizes of SNPs on exposures, with
 rows corresponding to SNPs and columns corresponding to exposures.</p></dd>
+
+
+<dt>weights</dt>
+<dd><p>Currently this is the same as betas; later used to store
+learned weights of SNPs on exposures and factors.</p></dd>
 
 
 <dt>stderrs</dt>
