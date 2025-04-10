@@ -59,4 +59,5 @@ docs
 inst/doc
 vignettes/sample_data_famr
 vignettes/sample_data_famr.zip
+.DS_Store
 

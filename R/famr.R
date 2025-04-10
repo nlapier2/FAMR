@@ -785,6 +785,7 @@ generate_factors = function(fa_method, sumstats, N=10000, given_factors='NONE',
        && nrow(full_ss$betas) > nrow(sumstats$betas)) {
       # impute GFA L_hat for full set of SNPs, if applicable
       if(is.null(dim(gfares$F_hat)))  gfares$F_hat = as.matrix(gfares$F_hat)
+      # gfa_imputed = gfa_loadings_gls(full_ss$betas, full_ss$stderrs, gfares)
       gfa_imputed = GFA:::loadings_gls(full_ss$betas, full_ss$stderrs,
                                        cor(full_ss$betas), gfares$F_hat)
       factor_wts = as.matrix(gfa_imputed$L)

@@ -39,7 +39,7 @@ disequilibrium (LD) matrices. Let's take a look at the summary statistics files:
 
 
 ```{r input_format_sumstats}
-# str(readRDS('sample_data_famr/summary_statistics/job_0_res__sumstats_locus_1.rds'))
+str(readRDS('sample_data_famr/summary_statistics/job_0_res__sumstats_locus_1.rds'))
 
 # Should look like this:
 # List of 8
@@ -81,7 +81,7 @@ names from. In our simulated data, the exposures are not named.
 Similarly, we can look at the LD matrices:
 
 ```{r input_format_ld}
-# str(readRDS('sample_data_famr/ld_matrices/job_0_res__ld_locus_1.rds'))
+str(readRDS('sample_data_famr/ld_matrices/job_0_res__ld_locus_1.rds'))
 
  # num [1:100, 1:100] 1 -0.0684 -0.0684 -0.1645 0.2496 ...
  # - attr(*, "dimnames")=List of 2
@@ -111,10 +111,10 @@ Optionally, after loading the `FAMR` package, you can try running
 `?famr_susie` to see a description of the function and available options.
 
 ```{r run_famr}
-# library(FAMR)
+library(FAMR)
 
-# res = famr_susie('sample_data_famr/summary_statistics/',
-#                  'sample_data_famr/ld_matrices/')
+res = famr_susie('sample_data_famr/summary_statistics/', 
+                 'sample_data_famr/ld_matrices/')
 
 ```
 
@@ -124,9 +124,9 @@ column names of the `Z` matrix in the summary statistics files.
 These simulated exposures don't have names, so we'll add them for readability.
 
 ```{r naming}
-# n_factor = length(res$pips$exposures) - 30
-# names(res$pips$exposures) = c(paste0('expo', 1:30), paste0('factor', 1:n_factor))
-# names(res$zscores$exposures) = names(res$pips$exposures)
+n_factor = length(res$pips$exposures) - 30
+names(res$pips$exposures) = c(paste0('expo', 1:30), paste0('factor', 1:n_factor))
+names(res$zscores$exposures) = names(res$pips$exposures)
 ```
 
 Now let's examine the results. The main thing we want to look at is the
@@ -136,7 +136,7 @@ We can also look at the marginal z-scores for each of these variables on the
 outcome.
 
 ```{r pips_zscores}
-# res$pips$exposures
+res$pips$exposures
 # Should look like:
 #      expo1      expo2      expo3      expo4      expo5      expo6      expo7 
 # 0.02168038 0.99999993 1.00000000 1.00000000 0.03006273 0.02086431 0.06564261 
@@ -150,7 +150,7 @@ outcome.
 # 0.01952278 0.01228583 0.99999989 1.00000000 
 
 
-# res$zscores$exposures
+res$zscores$exposures
 # Should look like:
 #          [,1]     [,2]    [,3]     [,4]     [,5]     [,6]     [,7]      [,8]
 # [1,] 1.195137 7.718487 9.03478 11.53807 0.341561 1.408553 1.385941 -4.041805
@@ -196,9 +196,9 @@ We can look at the "R" matrix in the results object, which captures the
 correlations between traits inferred by FAMR:
 
 ```{r inferred_corrs}
-# library(Matrix)  # R is a sparse Matrix object
+library(Matrix)  # R is a sparse Matrix object
 
-# res$R[8,1:32]
+res$R[8,1:32]
 # Should look like:
 #  [1]  1.184749e-09 -2.785313e-02  3.160052e-03  1.701398e-02  1.019044e-02
 #  [6] -1.286696e-02 -1.257566e-02  1.000000e+00 -5.366847e-02 -1.561301e-02

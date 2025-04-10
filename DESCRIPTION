@@ -1,6 +1,6 @@
 Package: FAMR
 Title: Factor-Augmented Mendelian Randomization with SuSiE (FAMR-Susie)
-Version: 0.0.14
+Version: 0.0.15
 Authors@R: 
     c(person("Nathan", "LaPierre", , "nathanl2012@gmail.com", 
           role = c("aut", "cre"), comment = c(ORCID = "0000-0003-2394-8868")),
@@ -32,3 +32,4 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Remotes: jean997/GFA

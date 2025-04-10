@@ -295,9 +295,11 @@ read_vcf = function(fname) {
 #' by GFA. L_hat will be of dimension nSNPs-by-nFactors, and t(F_hat) will be of
 #' dimension nFactors-by-nExposures.
 #' 
+#' @importFrom GFA gfa_fit
+#' 
 run_gfa_full = function(x_betas, x_stderrs, N) {
   gfa_factors = tryCatch({
-    gfares = GFA::gfa_fit(B_hat = x_betas, S = x_stderrs)
+    gfares = gfa_fit(B_hat = x_betas, S = x_stderrs)
     return(gfa_factor_prune_full(x_betas, gfares))
   }, error = function(e) {
     message('Error in GFA (may simply be no factors identified): ', e)
