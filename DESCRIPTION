@@ -1,6 +1,6 @@
 Package: FAMR
 Title: Factor-Augmented Mendelian Randomization with SuSiE (FAMR-Susie)
-Version: 0.0.12
+Version: 0.0.13
 Authors@R: 
     c(person("Nathan", "LaPierre", , "nathanl2012@gmail.com", 
           role = c("aut", "cre"), comment = c(ORCID = "0000-0003-2394-8868")),
@@ -28,3 +28,7 @@ Depends: R (>= 4.0.0)
 Imports: Matrix, MASS, data.table, dplyr, flashr, GFA, susieR, methods, rlang
 URL: https://www.nathanrlapierre.com/FAMR, https://github.com/nlapier2/FAMR/
 BugReports: https://www.nathanrlapierre.com/FAMR/issues
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

@@ -646,20 +646,20 @@ prune_and_merge = function(dat, sumstats, ld, prune_thresh, fa_prune_thresh,
 #' 
 #' @keywords internal
 #' 
-merge_outcome = function(sumstats, ld, y_gwas) {
+merge_outcome = function(sumstats, y_gwas, ld=c()) {
   if(is.null(nrow(sumstats$pos))) {  # if pos is only a vector of IDs
-    y_gwas = y_gwas[y_gwas$names_y %in% sumstats$pos, ]
     idx = which(sumstats$pos %in% y_gwas$names_y)
+    y_gwas = y_gwas[match(sumstats$pos[idx], y_gwas$names_y), ]
   } else {  # if pos is a list/df with an ID row
-    y_gwas = y_gwas[y_gwas$names_y %in% sumstats$pos$ID, ]
     idx = which(sumstats$pos$ID %in% y_gwas$names_y)
+    y_gwas = y_gwas[match(sumstats$pos$ID[idx], y_gwas$names_y), ]
   }
   if(length(idx) == 0)  return(list('sumstats' = c(), 'ld' = c()))
   sumstats = subset_sumstats(sumstats, idx)
   sumstats$zscores_y = y_gwas$zscores_y
   sumstats$betas_y = y_gwas$betas_y
   sumstats$stderrs_y = y_gwas$stderrs_y
-  ld = ld[idx, idx, drop=F]
+  if(length(ld) > 0)  ld = ld[idx, idx, drop=F]
   return(list('sumstats' = sumstats, 'ld' = ld))
 }
 

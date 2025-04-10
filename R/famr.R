@@ -145,6 +145,26 @@ famr_susie = function(in_dir, ld_dir, y_gwas_file='NONE', fa_method='gfa',
   factor_ss = generate_factors(fa_method, sumstats$ss_for_fa, num_samples,
                                full_ss=sumstats)
   
+  # merge outcome gwas and remove SNPs not in outcome gwas, if appropriate
+  orig_ss = sumstats
+  if(length(y_gwas) > 0) {
+    with_y = merge_outcome(sumstats, y_gwas, ld=c())
+    sumstats = with_y$sumstats
+    if(length(sumstats$betas) == 0) {
+      stop('ERROR: no SNPs overlap between exposures and outcome')
+    }
+    # subset ld for each locus
+    for(loc in 1:max(sumstats$locus_idx)) {
+      orig_ss_loc = subset_sumstats(orig_ss, orig_ss$locus_idx == loc)
+      sumstats_loc = subset_sumstats(sumstats, sumstats$locus_idx == loc) 
+      idx = orig_ss_loc$pos %in% sumstats_loc$pos
+      sumstats$ld[[loc]] = (sumstats$ld[[loc]])[idx, idx, drop=F]
+    }
+    # subset factors in same way
+    idx = factor_ss$pos %in% sumstats$pos
+    factor_ss = subset_sumstats(factor_ss, idx)
+  }
+  
   # project out factors from exposures and outcome if requested by user
   if(annihilate) {
     sumstats = annihilate_factors(sumstats, factor_ss)
@@ -549,14 +569,6 @@ gather_sumstats = function(in_dir, ld_dir, y_gwas=c(), oracle_mode=F,
     sumstats = readRDS(ss_fnames[f_idx])
     if(!is.null(nrow(sumstats$pos)))  sumstats$pos = sumstats$pos$ID
     ld = Matrix(as.matrix(readRDS(ld_fnames[f_idx])))
-
-    # remove SNPs not in outcome gwas, if appropriate
-    if(length(y_gwas) > 0) {
-      with_y = merge_outcome(sumstats, ld, y_gwas)
-      if(length(with_y$ld) == 0)  next
-      sumstats = with_y$sumstats
-      ld = with_y$ld
-    }
     
     if(length(ld) == 0)  next  # if no SNPs remaining, iterate loop
 
@@ -673,14 +685,6 @@ gather_sumstats_from_dat = function(all_ss, all_ld, y_gwas=c(), oracle_mode=F,
     idx = all_ss$locus_idx == f_idx
     sumstats = subset_sumstats(all_ss, idx)
     ld = all_ld[[f_idx]]
-    
-    # remove SNPs not in outcome gwas, if appropriate
-    if(length(y_gwas) > 0) {
-      with_y = merge_outcome(sumstats, ld, y_gwas)
-      if(length(with_y$ld) == 0)  next
-      sumstats = with_y$sumstats
-      ld = with_y$ld
-    }
     
     if(length(ld) == 0)  next  # if no SNPs remaining, iterate loop
     

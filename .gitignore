@@ -56,3 +56,7 @@ FAMR.Rproj
 docs
 #.github/
 #_pkgdown.yml
+inst/doc
+vignettes/sample_data_famr
+vignettes/sample_data_famr.zip
+

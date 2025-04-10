@@ -4,7 +4,7 @@
 \alias{merge_outcome}
 \title{Merge outcome and exposure summary statistics}
 \usage{
-merge_outcome(sumstats, ld, y_gwas)
+merge_outcome(sumstats, y_gwas, ld = c())
 }
 \arguments{
 \item{sumstats}{A list object with the following elements, i.e. summary
@@ -25,8 +25,6 @@ stderrs.}
 \item{pos}{A vector of SNP names.}
 }}
 
-\item{ld}{A numeric LD matrix between the SNPs in sumstats.}
-
 \item{y_gwas}{A list object with the following elements, i.e. summary
 statistics for the outcome:
 
@@ -40,6 +38,8 @@ statistics for the outcome:
 \item{zscores_y}{A vector of z-scores of SNPs on the outcome, equal to
 betas_y divided by stderrs_y.}
 }}
+
+\item{ld}{A numeric LD matrix between the SNPs in sumstats.}
 }
 \value{
 A list object with the following elements:
