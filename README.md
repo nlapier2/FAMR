@@ -53,7 +53,7 @@ to load the package.
 We recommend the following vignette as a quick introduction to the package
 and its input and output formats:
 
-(FORTHCOMING)
+[Getting Started](https://www.nathanrlapierre.com/FAMR/articles/Getting_Started.html)
 
 
 ### Citation
