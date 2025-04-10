@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">FAMR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.14</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,10 +82,9 @@ rm sample_data_famr.zip\?download\=1 </code></pre>
 there are two sub-directories, one with summary statistics files and one
 with linkage disequilibrium (LD) matrices. Let’s take a look at the
 summary statistics files:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># str(readRDS('sample_data_famr/summary_statistics/job_0_res__sumstats_locus_1.rds'))</span></span>
-<span></span>
-<span><span class="co"># Should look like this:</span></span>
+<pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">'sample_data_famr/summary_statistics/job_0_res__sumstats_locus_1.rds'</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Should look like this:</span></span>
 <span><span class="co"># List of 8</span></span>
 <span><span class="co">#  $ betas    : num [1:100, 1:30] -0.00114 -0.01379 -0.01378 -0.0132 -0.00901 ...</span></span>
 <span><span class="co">#  $ stderrs  : num [1:100, 1:30] 0.0141 0.0141 0.0141 0.0141 0.0141 ...</span></span>
@@ -98,13 +97,23 @@ summary statistics files:</p>
 <p>This shows you the format of the summary statistics input file. In
 this simulated dataset, there are 100 loci, with 100 SNPs each, and 30
 exposures. So there are 100 of these summary statistics files. Each has
-the following fields: * <code>betas</code>: A
-<code>(num_snp, num_exposure)</code> numeric matrix of marginal summary
-statistics effect sizes (e.g. from GWAS) for each SNP in this locus on
-each exposure. * <code>stderrs</code>: The corresponding standard errors
-for the <code>betas</code> * <code>Z</code>: the corresponding Z-scores,
-i.e. <code>betas / stderrs</code> * <code>pos</code>: the names of the
-SNPs</p>
+the following fields:</p>
+<ul>
+<li>
+<code>betas</code>: A <code>(num_snp, num_exposure)</code> numeric
+matrix of marginal summary statistics effect sizes (e.g. from GWAS) for
+each SNP in this locus on each exposure.</li>
+<li>
+<code>stderrs</code>: The corresponding standard errors for the
+<code>betas</code>
+</li>
+<li>
+<code>Z</code>: the corresponding Z-scores,
+i.e. <code>betas / stderrs</code>
+</li>
+<li>
+<code>pos</code>: the names of the SNPs</li>
+</ul>
 <p>The above fields are required, but this file has additional fields.
 It has <code>betas_y</code>, <code>stderrs_y</code>, and
 <code>zscores_y</code> which are vectors of summary statistics for the
@@ -120,9 +129,9 @@ as the column names of the <code>Z</code> matrix, as this is where the
 software pulls the exposure names from. In our simulated data, the
 exposures are not named.</p>
 <p>Similarly, we can look at the LD matrices:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># str(readRDS('sample_data_famr/ld_matrices/job_0_res__ld_locus_1.rds'))</span></span>
-<span></span>
+<pre><code><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">'sample_data_famr/ld_matrices/job_0_res__ld_locus_1.rds'</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span> <span class="co"># Should look like: </span></span>
 <span> <span class="co"># num [1:100, 1:100] 1 -0.0684 -0.0684 -0.1645 0.2496 ...</span></span>
 <span> <span class="co"># - attr(*, "dimnames")=List of 2</span></span>
 <span> <span class="co">#  ..$ : chr [1:100] "rs4303582" "rs77266488" "rs4583279" "rs201264110" ...</span></span>
@@ -146,28 +155,26 @@ downloaded the sample data into.</p>
 <code>famr_susie</code>. Optionally, after loading the <code>FAMR</code>
 package, you can try running <code><a href="../reference/famr_susie.html">?famr_susie</a></code> to see a
 description of the function and available options.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># library(FAMR)</span></span>
+<pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://www.nathanrlapierre.com/FAMR" class="external-link">FAMR</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># res = famr_susie('sample_data_famr/summary_statistics/',</span></span>
-<span><span class="co">#                  'sample_data_famr/ld_matrices/')</span></span></code></pre></div>
+<span><span class="va">res</span> <span class="op">=</span> <span class="fu"><a href="../reference/famr_susie.html">famr_susie</a></span><span class="op">(</span><span class="st">'sample_data_famr/summary_statistics/'</span>, </span>
+<span>                 <span class="st">'sample_data_famr/ld_matrices/'</span><span class="op">)</span></span></code></pre>
 <p>To make the results easier to read, let’s name the exposures.
 Normally you won’t have to do this if the exposure names are stored as
 the column names of the <code>Z</code> matrix in the summary statistics
 files. These simulated exposures don’t have names, so we’ll add them for
 readability.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># n_factor = length(res$pips$exposures) - 30</span></span>
-<span><span class="co"># names(res$pips$exposures) = c(paste0('expo', 1:30), paste0('factor', 1:n_factor))</span></span>
-<span><span class="co"># names(res$zscores$exposures) = names(res$pips$exposures)</span></span></code></pre></div>
+<pre><code><span><span class="va">n_factor</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">pips</span><span class="op">$</span><span class="va">exposures</span><span class="op">)</span> <span class="op">-</span> <span class="fl">30</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">pips</span><span class="op">$</span><span class="va">exposures</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">'expo'</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">'factor'</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_factor</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">zscores</span><span class="op">$</span><span class="va">exposures</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">pips</span><span class="op">$</span><span class="va">exposures</span><span class="op">)</span></span></code></pre>
 <p>Now let’s examine the results. The main thing we want to look at is
 the “posterior inclusion probabilities” (PIPs) of the variables, which
 indicate the probability that each of the exposures and factors are
 causal. We can also look at the marginal z-scores for each of these
 variables on the outcome.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># res$pips$exposures</span></span>
-<span><span class="co"># Should look like:</span></span>
+<pre><code><span><span class="va">res</span><span class="op">$</span><span class="va">pips</span><span class="op">$</span><span class="va">exposures</span></span></code></pre>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Should look like:</span></span>
 <span><span class="co">#      expo1      expo2      expo3      expo4      expo5      expo6      expo7 </span></span>
 <span><span class="co"># 0.02168038 0.99999993 1.00000000 1.00000000 0.03006273 0.02086431 0.06564261 </span></span>
 <span><span class="co">#      expo8      expo9     expo10     expo11     expo12     expo13     expo14 </span></span>
@@ -177,11 +184,10 @@ variables on the outcome.</p>
 <span><span class="co">#     expo22     expo23     expo24     expo25     expo26     expo27     expo28 </span></span>
 <span><span class="co"># 0.01412207 0.08089835 0.01236670 0.01174409 0.01187538 0.11216748 0.01420045 </span></span>
 <span><span class="co">#     expo29     expo30    factor1    factor2 </span></span>
-<span><span class="co"># 0.01952278 0.01228583 0.99999989 1.00000000 </span></span>
-<span></span>
-<span></span>
-<span><span class="co"># res$zscores$exposures</span></span>
-<span><span class="co"># Should look like:</span></span>
+<span><span class="co"># 0.01952278 0.01228583 0.99999989 1.00000000 </span></span></code></pre></div>
+<pre><code><span><span class="va">res</span><span class="op">$</span><span class="va">zscores</span><span class="op">$</span><span class="va">exposures</span></span></code></pre>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Should look like:</span></span>
 <span><span class="co">#          [,1]     [,2]    [,3]     [,4]     [,5]     [,6]     [,7]      [,8]</span></span>
 <span><span class="co"># [1,] 1.195137 7.718487 9.03478 11.53807 0.341561 1.408553 1.385941 -4.041805</span></span>
 <span><span class="co">#           [,9]      [,10]    [,11]     [,12]    [,13]    [,14]    [,15]</span></span>
@@ -219,11 +225,11 @@ There’s no real biology in this simulation, but as we’ll see, it can
 also reveal interesting things about what we see in our results.</p>
 <p>We can look at the “R” matrix in the results object, which captures
 the correlations between traits inferred by FAMR:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># library(Matrix)  # R is a sparse Matrix object</span></span>
+<pre><code><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://Matrix.R-forge.R-project.org" class="external-link">Matrix</a></span><span class="op">)</span>  <span class="co"># R is a sparse Matrix object</span></span>
 <span></span>
-<span><span class="co"># res$R[8,1:32]</span></span>
-<span><span class="co"># Should look like:</span></span>
+<span><span class="va">res</span><span class="op">$</span><span class="va">R</span><span class="op">[</span><span class="fl">8</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">32</span><span class="op">]</span></span></code></pre>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Should look like:</span></span>
 <span><span class="co">#  [1]  1.184749e-09 -2.785313e-02  3.160052e-03  1.701398e-02  1.019044e-02</span></span>
 <span><span class="co">#  [6] -1.286696e-02 -1.257566e-02  1.000000e+00 -5.366847e-02 -1.561301e-02</span></span>
 <span><span class="co"># [11] -4.302502e-02  1.342948e-02 -2.742825e-01 -9.099744e-04 -3.544528e-02</span></span>
